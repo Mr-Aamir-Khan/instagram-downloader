@@ -69,7 +69,7 @@ def home():
 # ─────────────────────────────────────────────
 # API Route (POST request)
 # ─────────────────────────────────────────────
-@app.route("/api/download", methods=["POST"])
+@app.route("/api/download", methods=["GET","POST"])
 def download():
     data = request.get_json(silent=True)
 

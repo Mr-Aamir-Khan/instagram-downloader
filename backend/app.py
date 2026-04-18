@@ -78,7 +78,7 @@ def extract_video_info(url: str) -> dict:
 # API Endpoint: POST /download
 # Body: { "url": "<instagram_link>" }
 # ─────────────────────────────────────────────
-@app.route("/download", methods=["POST"])
+@app.route("/", methods=["POST"])
 def download():
     data = request.get_json(silent=True)
 

@@ -788,6 +788,11 @@
       } catch {
         showError("Could not copy to clipboard.");
       }
+      fetch("https://instagram-downloader-t0pq.onrender.com/api/download", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: inputValue })
+})
     }
   </script>
 </body>

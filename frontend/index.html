@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Instasnap — Instagram Downloader</title>
+  <title>ReelRipper — Instagram Downloader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
 
   <style>
-    /* ════════════════════════════════════════
-       CSS VARIABLES — light & dark themes
-    ════════════════════════════════════════ */
     :root {
       --bg:          #0a0a0f;
       --surface:     #13131a;
@@ -29,7 +26,6 @@
       --radius-sm:   10px;
       --transition:  0.25s cubic-bezier(0.4,0,0.2,1);
     }
-
     [data-theme="light"] {
       --bg:          #f4f3f8;
       --surface:     #ffffff;
@@ -40,12 +36,7 @@
       --text-muted:  #8888a0;
       --accent-glow: rgba(232,54,93,0.18);
     }
-
-    /* ════════════════════════════════════════
-       RESET & BASE
-    ════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--bg);
@@ -57,17 +48,7 @@
       overflow-x: hidden;
       transition: background var(--transition), color var(--transition);
     }
-
-    /* ════════════════════════════════════════
-       BACKGROUND MESH
-    ════════════════════════════════════════ */
-    .bg-mesh {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
+    .bg-mesh { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
     .bg-mesh::before {
       content: '';
       position: absolute;
@@ -84,398 +65,142 @@
       bottom: -150px; right: -150px;
       animation: drift2 15s ease-in-out infinite alternate;
     }
-    @keyframes drift1 {
-      from { transform: translate(0,0) scale(1); }
-      to   { transform: translate(80px, 60px) scale(1.1); }
-    }
-    @keyframes drift2 {
-      from { transform: translate(0,0) scale(1); }
-      to   { transform: translate(-60px,-80px) scale(1.15); }
-    }
+    @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,60px) scale(1.1); } }
+    @keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-80px) scale(1.15); } }
 
-    /* ════════════════════════════════════════
-       LAYOUT WRAPPER
-    ════════════════════════════════════════ */
     .wrapper {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 660px;
+      position: relative; z-index: 1;
+      width: 100%; max-width: 660px;
       padding: 48px 24px 80px;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
+      display: flex; flex-direction: column; gap: 32px;
     }
-
-    /* ════════════════════════════════════════
-       HEADER
-    ════════════════════════════════════════ */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .brand { display: flex; flex-direction: column; gap: 4px; }
     .logo {
       font-family: 'Syne', sans-serif;
       font-size: clamp(28px, 6vw, 40px);
-      font-weight: 800;
-      line-height: 1;
+      font-weight: 800; line-height: 1;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
       letter-spacing: -1px;
     }
-    .tagline {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 300;
-      letter-spacing: 0.3px;
-    }
-
-    /* Theme toggle */
+    .tagline { font-size: 13px; color: var(--text-muted); font-weight: 300; letter-spacing: 0.3px; }
     .theme-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      padding: 8px 16px;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 13px;
-      font-family: 'DM Sans', sans-serif;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all var(--transition);
-      white-space: nowrap;
-      flex-shrink: 0;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 50px;
+      padding: 8px 16px; color: var(--text-muted); cursor: pointer; font-size: 13px;
+      font-family: 'DM Sans', sans-serif; display: flex; align-items: center; gap: 6px;
+      transition: all var(--transition); white-space: nowrap; flex-shrink: 0;
     }
-    .theme-btn:hover {
-      border-color: var(--border-h);
-      color: var(--text);
-    }
-
-    /* ════════════════════════════════════════
-       CARD
-    ════════════════════════════════════════ */
+    .theme-btn:hover { border-color: var(--border-h); color: var(--text); }
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 32px;
-      backdrop-filter: blur(20px);
-      transition: background var(--transition);
+      background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+      padding: 32px; backdrop-filter: blur(20px); transition: background var(--transition);
     }
-
-    /* ════════════════════════════════════════
-       INPUT SECTION
-    ════════════════════════════════════════ */
     .input-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-      display: block;
+      font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 10px; display: block;
     }
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
+    .input-row { display: flex; gap: 10px; }
     .url-input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 14px 18px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: 'DM Sans', sans-serif;
-      outline: none;
-      transition: all var(--transition);
+      flex: 1; background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 18px; color: var(--text);
+      font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all var(--transition);
     }
     .url-input::placeholder { color: var(--text-muted); }
-    .url-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
+    .url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
     .dl-btn {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border: none;
-      border-radius: var(--radius-sm);
-      padding: 14px 24px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      font-family: 'Syne', sans-serif;
-      letter-spacing: 0.3px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-    .dl-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0);
-      transition: background var(--transition);
+      border: none; border-radius: var(--radius-sm); padding: 14px 24px;
+      color: #fff; font-size: 14px; font-weight: 600; font-family: 'Syne', sans-serif;
+      letter-spacing: 0.3px; cursor: pointer; white-space: nowrap;
+      transition: all var(--transition); position: relative; overflow: hidden;
     }
     .dl-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
-    .dl-btn:hover::after { background: rgba(255,255,255,0.08); }
     .dl-btn:active { transform: translateY(0); }
     .dl-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-
-    /* ════════════════════════════════════════
-       HELPER TEXT
-    ════════════════════════════════════════ */
-    .hint {
-      margin-top: 12px;
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .hint svg { flex-shrink: 0; }
-
-    /* ════════════════════════════════════════
-       LOADER
-    ════════════════════════════════════════ */
-    .loader-wrap {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      padding: 40px 0;
-    }
+    .hint { margin-top: 12px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .loader-wrap { display: none; flex-direction: column; align-items: center; gap: 16px; padding: 40px 0; }
     .loader-wrap.visible { display: flex; }
-
     .spinner {
-      width: 48px; height: 48px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      width: 48px; height: 48px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loader-text {
-      font-size: 14px;
-      color: var(--text-muted);
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 0.5; }
-      50%      { opacity: 1; }
-    }
-
-    /* ════════════════════════════════════════
-       RESULT CARD
-    ════════════════════════════════════════ */
+    .loader-text { font-size: 14px; color: var(--text-muted); animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
     .result-card {
-      display: none;
-      flex-direction: column;
-      gap: 0;
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: 1px solid var(--border);
+      display: none; flex-direction: column; gap: 0;
+      border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
       animation: slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
     }
     .result-card.visible { display: flex; }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Thumbnail */
-    .thumb-wrap {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16/9;
-      background: var(--surface2);
-      overflow: hidden;
-    }
-    .thumb-wrap img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.4s ease;
-    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: var(--surface2); overflow: hidden; }
+    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
     .thumb-wrap:hover img { transform: scale(1.03); }
-
-    /* Play overlay */
     .play-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.3);
-      opacity: 0;
-      transition: opacity var(--transition);
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.3); opacity: 0; transition: opacity var(--transition);
     }
     .thumb-wrap:hover .play-overlay { opacity: 1; }
     .play-overlay svg { filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }
-
-    /* Thumbnail placeholder */
     .thumb-placeholder {
-      width: 100%; height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
       background: linear-gradient(135deg, var(--surface2), var(--surface));
     }
     .thumb-placeholder svg { opacity: 0.25; }
-
-    /* Result info */
-    .result-info {
-      background: var(--surface);
-      padding: 20px 24px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    .result-info { background: var(--surface); padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
     .result-meta { display: flex; flex-direction: column; gap: 4px; }
     .result-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+      color: var(--text); line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-    .result-uploader {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
+    .result-uploader { font-size: 12px; color: var(--text-muted); }
     .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
     .btn-download {
-      flex: 1;
-      min-width: 140px;
+      flex: 1; min-width: 140px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      padding: 13px 20px;
-      font-size: 14px;
-      font-weight: 600;
-      font-family: 'Syne', sans-serif;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all var(--transition);
+      color: #fff; border: none; border-radius: var(--radius-sm); padding: 13px 20px;
+      font-size: 14px; font-weight: 600; font-family: 'Syne', sans-serif;
+      cursor: pointer; text-decoration: none; display: flex; align-items: center;
+      justify-content: center; gap: 8px; transition: all var(--transition);
     }
     .btn-download:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
-
     .btn-copy {
-      background: var(--surface2);
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 13px 16px;
-      font-size: 13px;
-      font-family: 'DM Sans', sans-serif;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all var(--transition);
-      white-space: nowrap;
+      background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 13px 16px; font-size: 13px;
+      font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex;
+      align-items: center; gap: 6px; transition: all var(--transition); white-space: nowrap;
     }
     .btn-copy:hover { border-color: var(--border-h); color: var(--text); }
     .btn-copy.copied { color: var(--success); border-color: var(--success); }
-
-    /* ════════════════════════════════════════
-       ERROR TOAST
-    ════════════════════════════════════════ */
     .error-box {
-      display: none;
-      align-items: flex-start;
-      gap: 12px;
-      background: rgba(255,71,87,0.1);
-      border: 1px solid rgba(255,71,87,0.3);
-      border-radius: var(--radius-sm);
-      padding: 14px 16px;
-      color: var(--error);
-      font-size: 13.5px;
-      animation: slideUp 0.3s ease;
+      display: none; align-items: flex-start; gap: 12px;
+      background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      color: var(--error); font-size: 13.5px; animation: slideUp 0.3s ease;
     }
     .error-box.visible { display: flex; }
-    .error-box svg { flex-shrink: 0; margin-top: 1px; }
-
-    /* ════════════════════════════════════════
-       HOW IT WORKS SECTION
-    ════════════════════════════════════════ */
-    .how-it-works {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
+    .how-it-works { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .step {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      text-align: center;
-      transition: border-color var(--transition), transform var(--transition);
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 16px; display: flex; flex-direction: column; align-items: center;
+      gap: 10px; text-align: center; transition: border-color var(--transition), transform var(--transition);
     }
     .step:hover { border-color: var(--border-h); transform: translateY(-2px); }
     .step-num {
-      width: 36px; height: 36px;
-      border-radius: 50%;
+      width: 36px; height: 36px; border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 15px;
-      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: #fff;
     }
-    .step-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* ════════════════════════════════════════
-       FOOTER
-    ════════════════════════════════════════ */
+    .step-label { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
     footer {
-      font-size: 12px;
-      color: var(--text-muted);
-      text-align: center;
-      padding: 0 24px 32px;
-      position: relative;
-      z-index: 1;
+      font-size: 12px; color: var(--text-muted); text-align: center;
+      padding: 0 24px 32px; position: relative; z-index: 1;
     }
     footer a { color: var(--accent); text-decoration: none; }
-
-    /* ════════════════════════════════════════
-       RESPONSIVE
-    ════════════════════════════════════════ */
     @media (max-width: 500px) {
       .card { padding: 20px 16px; }
       .input-row { flex-direction: column; }
@@ -487,15 +212,13 @@
 </head>
 <body>
 
-  <!-- Animated background mesh -->
   <div class="bg-mesh" aria-hidden="true"></div>
 
   <div class="wrapper">
-
-    <!-- ── HEADER ── -->
     <header>
       <div class="brand">
-        <div class="logo">InstaSc:\Users\mrkha\OneDrive\Desktop\reelrippernap</div>
+        <!-- ✅ FIX 1: Logo text fixed — file path hata diya -->
+        <div class="logo">ReelRipper</div>
         <div class="tagline">Instagram video downloader — fast &amp; free</div>
       </div>
       <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">
@@ -507,7 +230,6 @@
       </button>
     </header>
 
-    <!-- ── MAIN CARD ── -->
     <div class="card">
       <label class="input-label" for="urlInput">Paste your Instagram link</label>
       <div class="input-row">
@@ -531,13 +253,11 @@
       </p>
     </div>
 
-    <!-- ── LOADER ── -->
     <div class="loader-wrap" id="loader" role="status" aria-live="polite">
       <div class="spinner"></div>
       <div class="loader-text" id="loaderText">Fetching video info…</div>
     </div>
 
-    <!-- ── ERROR BOX ── -->
     <div class="error-box" id="errorBox" role="alert">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
@@ -545,9 +265,7 @@
       <span id="errorText">Something went wrong.</span>
     </div>
 
-    <!-- ── RESULT CARD ── -->
     <div class="result-card" id="resultCard">
-      <!-- Thumbnail -->
       <div class="thumb-wrap" id="thumbWrap">
         <div class="thumb-placeholder" id="thumbPlaceholder">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -562,14 +280,14 @@
         </div>
       </div>
 
-      <!-- Info + Download -->
       <div class="result-info">
         <div class="result-meta">
           <div class="result-title" id="resultTitle">Video Title</div>
           <div class="result-uploader" id="resultUploader"></div>
         </div>
         <div class="result-actions">
-          <a class="btn-download" id="downloadLink" href="#" target="_blank" rel="noopener">
+          <!-- ✅ FIX 2: download attribute added so browser saves instead of opening -->
+          <a class="btn-download" id="downloadLink" href="#" download="reelripper_video.mp4" target="_blank" rel="noopener">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M12 5v14M5 12l7 7 7-7"/>
             </svg>
@@ -585,7 +303,6 @@
       </div>
     </div>
 
-    <!-- ── HOW IT WORKS ── -->
     <div class="how-it-works" aria-label="How it works">
       <div class="step">
         <div class="step-num">1</div>
@@ -600,23 +317,17 @@
         <div class="step-label">Download the video directly</div>
       </div>
     </div>
-
-  </div><!-- /wrapper -->
+  </div>
 
   <footer>
     ReelRipper is not affiliated with Instagram / Meta. Use responsibly and respect creators. &nbsp;·&nbsp;
     <a href="https://github.com/yt-dlp/yt-dlp" target="_blank">Powered by yt-dlp</a>
   </footer>
 
-  <!-- ════════════════════════════════════════
-       JAVASCRIPT
-  ════════════════════════════════════════ -->
   <script>
-    // ── Config ──────────────────────────────
-    // Change this to match your backend URL if deployed elsewhere
-    const API_BASE = "http://localhost:5000";
+    // ✅ FIX 3: Apna Render URL yahan daal do
+    const API_BASE = "https://instagram-downloader-t0pq.onrender.com";
 
-    // Loader message cycling
     const LOADER_MESSAGES = [
       "Fetching video info…",
       "Talking to Instagram…",
@@ -627,13 +338,12 @@
     let loaderInterval = null;
     let currentVideoUrl = "";
 
-    // ── Theme Toggle ─────────────────────────
+    // ── Theme Toggle ──
     const html = document.documentElement;
     const themeToggle = document.getElementById("themeToggle");
     const themeIcon   = document.getElementById("themeIcon");
     const themeLabel  = document.getElementById("themeLabel");
 
-    // Restore saved theme
     const savedTheme = localStorage.getItem("rr-theme") || "dark";
     setTheme(savedTheme);
 
@@ -653,7 +363,7 @@
       setTheme(html.dataset.theme === "dark" ? "light" : "dark");
     });
 
-    // ── UI Helpers ───────────────────────────
+    // ── UI Helpers ──
     function showLoader() {
       document.getElementById("loader").classList.add("visible");
       hideResult(); hideError();
@@ -672,9 +382,8 @@
     }
 
     function showError(msg) {
-      const box = document.getElementById("errorBox");
       document.getElementById("errorText").textContent = msg;
-      box.classList.add("visible");
+      document.getElementById("errorBox").classList.add("visible");
     }
 
     function hideError() {
@@ -683,17 +392,11 @@
 
     function showResult(data) {
       const card = document.getElementById("resultCard");
-
-      // Title & uploader
       document.getElementById("resultTitle").textContent = data.title || "Instagram Video";
-      document.getElementById("resultUploader").textContent =
-        data.uploader ? `@${data.uploader}` : "";
+      document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
 
-      // Thumbnail
-      const thumbWrap = document.getElementById("thumbWrap");
+      const thumbWrap   = document.getElementById("thumbWrap");
       const placeholder = document.getElementById("thumbPlaceholder");
-
-      // Remove old img if any
       const oldImg = thumbWrap.querySelector("img");
       if (oldImg) oldImg.remove();
 
@@ -708,11 +411,9 @@
         placeholder.style.display = "flex";
       }
 
-      // Download link
       const dl = document.getElementById("downloadLink");
       dl.href = data.download_url;
       currentVideoUrl = data.download_url;
-
       card.classList.add("visible");
     }
 
@@ -720,25 +421,17 @@
       document.getElementById("resultCard").classList.remove("visible");
     }
 
-    // ── Paste shortcut ───────────────────────
     document.getElementById("urlInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") handleDownload();
     });
 
-    // ── Main download handler ─────────────────
+    // ✅ FIX 4: Correct endpoint /download (not /api/download)
     async function handleDownload() {
       const url = document.getElementById("urlInput").value.trim();
       const btn = document.getElementById("downloadBtn");
 
-      // Basic client-side validation before hitting the API
-      if (!url) {
-        showError("Please paste an Instagram URL first.");
-        return;
-      }
-      if (!url.includes("instagram.com")) {
-        showError("That doesn't look like an Instagram link.");
-        return;
-      }
+      if (!url) { showError("Please paste an Instagram URL first."); return; }
+      if (!url.includes("instagram.com")) { showError("That doesn't look like an Instagram link."); return; }
 
       btn.disabled = true;
       showLoader();
@@ -761,9 +454,8 @@
 
       } catch (err) {
         hideLoader();
-        // Network error vs API error
         if (err.message === "Failed to fetch") {
-          showError("Cannot reach the backend server. Make sure it's running on " + API_BASE);
+          showError("Backend server se connect nahi ho pa raha. Check karo: " + API_BASE);
         } else {
           showError(err.message || "Unknown error occurred.");
         }
@@ -772,27 +464,28 @@
       }
     }
 
-    // ── Copy link button ──────────────────────
+    // ✅ FIX 5: copyLink — stray fetch() hata diya, sirf clipboard copy karo
     async function copyLink() {
       if (!currentVideoUrl) return;
       const btn = document.getElementById("copyBtn");
       try {
         await navigator.clipboard.writeText(currentVideoUrl);
         btn.classList.add("copied");
-        btn.querySelector("svg").outerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`;
-        btn.childNodes[1].textContent = " Copied!";
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg> Copied!`;
         setTimeout(() => {
           btn.classList.remove("copied");
-          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Link`;
+          btn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg> Copy Link`;
         }, 2000);
       } catch {
-        showError("Could not copy to clipboard.");
+        showError("Clipboard copy nahi ho saka.");
       }
-      fetch("https://instagram-downloader-t0pq.onrender.com/api/download", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ url: inputValue })
-})
     }
   </script>
 </body>

@@ -3,40 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReelRipper — Instagram Downloader</title>
+  <title>ReelRipper — Instagram Video Downloader</title>
+  <meta name="description" content="Download Instagram Reels, Posts and IGTV videos free. No login required. HD quality. Fast processing." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
 
   <style>
+    /* ─── DESIGN TOKENS ─────────────────────────────── */
     :root {
-      --bg:          #0a0a0f;
-      --surface:     #13131a;
-      --surface2:    #1c1c28;
-      --border:      rgba(255,255,255,0.07);
-      --border-h:    rgba(255,255,255,0.18);
-      --text:        #f0f0f8;
-      --text-muted:  #6b6b80;
-      --accent:      #e8365d;
-      --accent2:     #ff6b35;
-      --accent-glow: rgba(232,54,93,0.35);
-      --success:     #00d68f;
-      --error:       #ff4757;
-      --radius:      16px;
-      --radius-sm:   10px;
-      --transition:  0.25s cubic-bezier(0.4,0,0.2,1);
+      --bg:           #08080f;
+      --surface:      #111118;
+      --surface2:     #1a1a24;
+      --surface3:     #222230;
+      --border:       rgba(255,255,255,0.07);
+      --border-h:     rgba(255,255,255,0.16);
+      --text:         #ededf5;
+      --text-muted:   #5e5e78;
+      --text-sub:     #9090a8;
+      --accent:       #e8365d;
+      --accent2:      #ff6b35;
+      --accent-mid:   #f04e47;
+      --accent-glow:  rgba(232,54,93,0.28);
+      --success:      #00d68f;
+      --success-glow: rgba(0,214,143,0.15);
+      --error:        #ff4757;
+      --error-glow:   rgba(255,71,87,0.12);
+      --radius:       18px;
+      --radius-sm:    12px;
+      --radius-xs:    8px;
+      --t:            0.22s cubic-bezier(0.4,0,0.2,1);
+      --t-slow:       0.4s cubic-bezier(0.4,0,0.2,1);
     }
     [data-theme="light"] {
-      --bg:          #f4f3f8;
-      --surface:     #ffffff;
-      --surface2:    #ebebf3;
-      --border:      rgba(0,0,0,0.08);
-      --border-h:    rgba(0,0,0,0.18);
-      --text:        #14141e;
-      --text-muted:  #8888a0;
-      --accent-glow: rgba(232,54,93,0.18);
+      --bg:           #f2f1f8;
+      --surface:      #ffffff;
+      --surface2:     #eeedf6;
+      --surface3:     #e4e3f0;
+      --border:       rgba(0,0,0,0.07);
+      --border-h:     rgba(0,0,0,0.15);
+      --text:         #12121e;
+      --text-muted:   #8888a2;
+      --text-sub:     #5a5a72;
+      --accent-glow:  rgba(232,54,93,0.14);
+      --success-glow: rgba(0,214,143,0.1);
+      --error-glow:   rgba(255,71,87,0.08);
     }
+
+    /* ─── RESET & BASE ──────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--bg);
@@ -46,167 +62,633 @@
       flex-direction: column;
       align-items: center;
       overflow-x: hidden;
-      transition: background var(--transition), color var(--transition);
+      transition: background var(--t-slow), color var(--t-slow);
+      -webkit-font-smoothing: antialiased;
     }
-    .bg-mesh { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+
+    /* ─── ANIMATED BACKGROUND ────────────────────────── */
+    .bg-mesh {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
     .bg-mesh::before {
       content: '';
       position: absolute;
-      width: 700px; height: 700px;
-      background: radial-gradient(circle, rgba(232,54,93,0.18) 0%, transparent 70%);
-      top: -200px; left: -200px;
-      animation: drift1 12s ease-in-out infinite alternate;
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(232,54,93,0.14) 0%, transparent 65%);
+      top: -300px; left: -250px;
+      animation: drift1 14s ease-in-out infinite alternate;
     }
     .bg-mesh::after {
       content: '';
       position: absolute;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(255,107,53,0.13) 0%, transparent 70%);
-      bottom: -150px; right: -150px;
-      animation: drift2 15s ease-in-out infinite alternate;
+      width: 650px; height: 650px;
+      background: radial-gradient(circle, rgba(255,107,53,0.10) 0%, transparent 65%);
+      bottom: -200px; right: -200px;
+      animation: drift2 18s ease-in-out infinite alternate;
     }
-    @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,60px) scale(1.1); } }
-    @keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-80px) scale(1.15); } }
+    @keyframes drift1 {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(90px,70px) scale(1.12); }
+    }
+    @keyframes drift2 {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(-70px,-90px) scale(1.18); }
+    }
 
+    /* ─── LAYOUT ─────────────────────────────────────── */
     .wrapper {
       position: relative; z-index: 1;
-      width: 100%; max-width: 660px;
-      padding: 48px 24px 80px;
-      display: flex; flex-direction: column; gap: 32px;
+      width: 100%; max-width: 680px;
+      padding: 52px 24px 96px;
+      display: flex; flex-direction: column; gap: 28px;
     }
-    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    .brand { display: flex; flex-direction: column; gap: 4px; }
+
+    /* ─── HEADER ─────────────────────────────────────── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .brand { display: flex; flex-direction: column; gap: 5px; }
     .logo {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(28px, 6vw, 40px);
-      font-weight: 800; line-height: 1;
+      font-size: clamp(30px, 7vw, 44px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -1.5px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-mid) 50%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 300;
+      letter-spacing: 0.4px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* ─── LANG SWITCH ────────────────────────────────── */
+    .lang-switch {
+      display: flex;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      padding: 5px 13px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all var(--t);
+      font-family: 'DM Sans', sans-serif;
+      white-space: nowrap;
+    }
+    .lang-btn.active {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      letter-spacing: -1px;
+      color: #fff;
     }
-    .tagline { font-size: 13px; color: var(--text-muted); font-weight: 300; letter-spacing: 0.3px; }
+    .lang-btn:hover:not(.active) {
+      color: var(--accent);
+      background: rgba(232,54,93,0.08);
+    }
+
+    /* ─── THEME TOGGLE ───────────────────────────────── */
     .theme-btn {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 50px;
-      padding: 8px 16px; color: var(--text-muted); cursor: pointer; font-size: 13px;
-      font-family: 'DM Sans', sans-serif; display: flex; align-items: center; gap: 6px;
-      transition: all var(--transition); white-space: nowrap; flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 7px 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--t);
+      white-space: nowrap;
     }
-    .theme-btn:hover { border-color: var(--border-h); color: var(--text); }
+    .theme-btn:hover {
+      border-color: var(--border-h);
+      color: var(--text);
+    }
+
+    /* ─── CARD ───────────────────────────────────────── */
     .card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
-      padding: 32px; backdrop-filter: blur(20px); transition: background var(--transition);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px 28px 24px;
+      transition: background var(--t-slow), border-color var(--t);
     }
+    .card:hover { border-color: var(--border-h); }
+
+    /* ─── INPUT AREA ─────────────────────────────────── */
     .input-label {
-      font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
-      color: var(--text-muted); margin-bottom: 10px; display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: block;
     }
-    .input-row { display: flex; gap: 10px; }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
     .url-input {
-      flex: 1; background: var(--surface2); border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm); padding: 14px 18px; color: var(--text);
-      font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all var(--transition);
+      flex: 1;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: all var(--t);
+      min-width: 0;
     }
     .url-input::placeholder { color: var(--text-muted); }
-    .url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .url-input:focus {
+      border-color: var(--accent);
+      background: var(--surface3);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .url-input:focus::placeholder { color: transparent; }
+
     .dl-btn {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border: none; border-radius: var(--radius-sm); padding: 14px 24px;
-      color: #fff; font-size: 14px; font-weight: 600; font-family: 'Syne', sans-serif;
-      letter-spacing: 0.3px; cursor: pointer; white-space: nowrap;
-      transition: all var(--transition); position: relative; overflow: hidden;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px 22px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--t);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
     }
-    .dl-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
+    .dl-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background var(--t);
+    }
+    .dl-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px var(--accent-glow);
+    }
+    .dl-btn:hover::before { background: rgba(255,255,255,0.08); }
     .dl-btn:active { transform: translateY(0); }
-    .dl-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-    .hint { margin-top: 12px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
-    .loader-wrap { display: none; flex-direction: column; align-items: center; gap: 16px; padding: 40px 0; }
+    .dl-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .hint {
+      margin-top: 11px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.4;
+    }
+
+    /* ─── LOADER ─────────────────────────────────────── */
+    .loader-wrap {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 44px 0;
+    }
     .loader-wrap.visible { display: flex; }
-    .spinner {
-      width: 48px; height: 48px; border: 3px solid var(--border);
-      border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite;
+    .spinner-ring {
+      width: 50px; height: 50px;
+      position: relative;
+    }
+    .spinner-ring::before,
+    .spinner-ring::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+    }
+    .spinner-ring::before {
+      border-top-color: var(--accent);
+      border-right-color: var(--accent2);
+      animation: spin 0.8s linear infinite;
+    }
+    .spinner-ring::after {
+      inset: 8px;
+      border-bottom-color: var(--accent);
+      opacity: 0.4;
+      animation: spin 1.4s linear infinite reverse;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader-text { font-size: 14px; color: var(--text-muted); animation: pulse 1.5s ease-in-out infinite; }
-    @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .loader-text {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      animation: pulse 1.6s ease-in-out infinite;
+      letter-spacing: 0.2px;
+    }
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+    /* ─── ERROR BOX ──────────────────────────────────── */
+    .error-box {
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--error-glow);
+      border: 1px solid rgba(255,71,87,0.28);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      color: var(--error);
+      font-size: 13.5px;
+      animation: slideUp 0.3s ease;
+      line-height: 1.45;
+    }
+    .error-box.visible { display: flex; }
+    .error-box svg { flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── RESULT CARD ────────────────────────────────── */
     .result-card {
-      display: none; flex-direction: column; gap: 0;
-      border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
+      display: none;
+      flex-direction: column;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
       animation: slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
     }
     .result-card.visible { display: flex; }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: var(--surface2); overflow: hidden; }
-    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
-    .thumb-wrap:hover img { transform: scale(1.03); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .thumb-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--surface2);
+      overflow: hidden;
+    }
+    .thumb-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transition: transform 0.5s ease;
+    }
+    .thumb-wrap:hover img { transform: scale(1.04); }
     .play-overlay {
-      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.3); opacity: 0; transition: opacity var(--transition);
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.25);
+      opacity: 0;
+      transition: opacity var(--t);
     }
     .thumb-wrap:hover .play-overlay { opacity: 1; }
-    .play-overlay svg { filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }
     .thumb-placeholder {
-      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, var(--surface2), var(--surface));
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--surface2) 0%, var(--surface3) 100%);
     }
-    .thumb-placeholder svg { opacity: 0.25; }
-    .result-info { background: var(--surface); padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .thumb-placeholder svg { opacity: 0.2; }
+    .result-info {
+      background: var(--surface);
+      padding: 20px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
     .result-meta { display: flex; flex-direction: column; gap: 4px; }
     .result-title {
-      font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
-      color: var(--text); line-height: 1.4;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    .result-uploader { font-size: 12px; color: var(--text-muted); }
+    .result-uploader {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
     .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-download {
       flex: 1; min-width: 140px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff; border: none; border-radius: var(--radius-sm); padding: 13px 20px;
-      font-size: 14px; font-weight: 600; font-family: 'Syne', sans-serif;
-      cursor: pointer; text-decoration: none; display: flex; align-items: center;
-      justify-content: center; gap: 8px; transition: all var(--transition);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 13px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--t);
     }
-    .btn-download:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
+    .btn-download:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
     .btn-copy {
-      background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 13px 16px; font-size: 13px;
-      font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex;
-      align-items: center; gap: 6px; transition: all var(--transition); white-space: nowrap;
+      background: var(--surface2);
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 13px 16px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--t);
+      white-space: nowrap;
     }
     .btn-copy:hover { border-color: var(--border-h); color: var(--text); }
-    .btn-copy.copied { color: var(--success); border-color: var(--success); }
-    .error-box {
-      display: none; align-items: flex-start; gap: 12px;
-      background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3);
-      border-radius: var(--radius-sm); padding: 14px 16px;
-      color: var(--error); font-size: 13.5px; animation: slideUp 0.3s ease;
+    .btn-copy.copied { color: var(--success); border-color: var(--success); background: var(--success-glow); }
+
+    /* ─── HOW IT WORKS ───────────────────────────────── */
+    .how-it-works {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
     }
-    .error-box.visible { display: flex; }
-    .how-it-works { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .step {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 20px 16px; display: flex; flex-direction: column; align-items: center;
-      gap: 10px; text-align: center; transition: border-color var(--transition), transform var(--transition);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+      transition: border-color var(--t), transform var(--t);
     }
-    .step:hover { border-color: var(--border-h); transform: translateY(-2px); }
+    .step:hover { border-color: rgba(232,54,93,0.35); transform: translateY(-2px); }
     .step-num {
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 36px; height: 36px;
+      border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 15px; color: #fff;
+      flex-shrink: 0;
     }
-    .step-label { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .step-label { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
+
+    /* ─── GUIDE / INFO SECTION ───────────────────────── */
+    .guide-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      transition: background var(--t-slow);
+    }
+    .guide-header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+    .guide-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(18px, 4vw, 22px);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .guide-header p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 18px 0;
+    }
+    .feature-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 10px;
+      text-align: center;
+      transition: all var(--t);
+      cursor: default;
+    }
+    .feature-card:hover {
+      border-color: rgba(232,54,93,0.35);
+      transform: translateY(-2px);
+      background: var(--surface3);
+    }
+    .feature-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+    .feature-title { font-size: 11.5px; font-weight: 600; color: var(--text); }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 22px 0;
+    }
+    .guide-sub {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    /* Steps list */
+    .steps-container { display: flex; flex-direction: column; gap: 10px; }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface2);
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      transition: all var(--t);
+    }
+    .step-item:hover { border-color: rgba(232,54,93,0.3); }
+    .step-number {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px; color: white;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+    /* Devices */
+    .devices-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 2px 0;
+    }
+    .device-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 5px 13px;
+      font-size: 12px;
+      color: var(--text-sub);
+      transition: all var(--t);
+      cursor: default;
+    }
+    .device-badge:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Info boxes */
+    .safety-box {
+      background: var(--success-glow);
+      border: 1px solid rgba(0,214,143,0.22);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .safety-icon { font-size: 26px; flex-shrink: 0; }
+    .safety-text { font-size: 13px; color: var(--text-sub); line-height: 1.55; }
+    .safety-text strong { color: var(--success); }
+
+    .note-box {
+      background: var(--error-glow);
+      border: 1px solid rgba(255,71,87,0.22);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .note-icon { font-size: 20px; flex-shrink: 0; }
+    .note-text { font-size: 13px; color: var(--text-sub); line-height: 1.55; }
+    .note-text strong { color: var(--error); }
+
+    /* ─── FAQ ACCORDION ──────────────────────────────── */
+    .faq-container { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .faq-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color var(--t);
+    }
+    .faq-item:hover { border-color: var(--border-h); }
+    .faq-item.active { border-color: rgba(232,54,93,0.3); }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 17px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13.5px;
+      color: var(--text);
+      transition: background var(--t);
+      user-select: none;
+      gap: 12px;
+    }
+    .faq-question:hover { background: rgba(232,54,93,0.06); }
+    .faq-icon {
+      font-size: 16px;
+      color: var(--accent);
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+    .faq-item.active .faq-icon { transform: rotate(180deg); }
+    .faq-answer {
+      max-height: 0;
+      padding: 0 17px;
+      overflow: hidden;
+      transition: max-height 0.32s ease, padding 0.32s ease;
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.65;
+    }
+    .faq-item.active .faq-answer {
+      max-height: 250px;
+      padding: 0 17px 15px;
+    }
+
+    /* ─── LANGUAGE CONTENT TOGGLE ─────────────────────── */
+    .lang-content { display: none; }
+    .lang-content.active-lang { display: block; }
+
+    /* ─── FOOTER ─────────────────────────────────────── */
     footer {
-      font-size: 12px; color: var(--text-muted); text-align: center;
-      padding: 0 24px 32px; position: relative; z-index: 1;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0 24px 36px;
+      position: relative;
+      z-index: 1;
+      line-height: 1.7;
     }
     footer a { color: var(--accent); text-decoration: none; }
-    @media (max-width: 500px) {
-      .card { padding: 20px 16px; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── RESPONSIVE ─────────────────────────────────── */
+    @media (max-width: 540px) {
+      .wrapper { padding: 32px 16px 72px; gap: 20px; }
+      .card { padding: 18px 16px; }
+      .guide-card { padding: 20px 16px; }
       .input-row { flex-direction: column; }
-      .dl-btn { width: 100%; }
+      .dl-btn { width: 100%; justify-content: center; }
       .how-it-works { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
       .result-info { padding: 16px; }
+      .header-actions { gap: 8px; }
+      .lang-btn { padding: 5px 10px; font-size: 11px; }
+      .theme-btn { padding: 6px 10px; font-size: 11px; }
+    }
+    @media (max-width: 380px) {
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .logo { font-size: 28px; }
     }
   </style>
 </head>
@@ -215,23 +697,33 @@
   <div class="bg-mesh" aria-hidden="true"></div>
 
   <div class="wrapper">
+
+    <!-- ─── HEADER ──────────────────────────────────── -->
     <header>
       <div class="brand">
-        <!-- ✅ FIX 1: Logo text fixed — file path hata diya -->
         <div class="logo">ReelRipper</div>
-        <div class="tagline">Instagram video downloader — fast &amp; free</div>
+        <div class="tagline" id="taglineText">Instagram video downloader — fast &amp; free</div>
       </div>
-      <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">
-        <svg id="themeIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="12" cy="12" r="5"/>
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-        </svg>
-        <span id="themeLabel">Light Mode</span>
-      </button>
+      <div class="header-actions">
+        <!-- Language Switch -->
+        <div class="lang-switch" role="group" aria-label="Select language">
+          <button class="lang-btn active" data-lang="en" aria-pressed="true">🇬🇧 EN</button>
+          <button class="lang-btn" data-lang="hi" aria-pressed="false">🇮🇳 हिंदी</button>
+        </div>
+        <!-- Theme Toggle -->
+        <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">
+          <svg id="themeIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <span id="themeLabel">Light</span>
+        </button>
+      </div>
     </header>
 
+    <!-- ─── INPUT CARD ───────────────────────────────── -->
     <div class="card">
-      <label class="input-label" for="urlInput">Paste your Instagram link</label>
+      <label class="input-label" for="urlInput" id="inputLabel">Paste your Instagram link</label>
       <div class="input-row">
         <input
           id="urlInput"
@@ -240,145 +732,400 @@
           placeholder="https://www.instagram.com/reel/..."
           autocomplete="off"
           spellcheck="false"
+          aria-label="Instagram video URL"
         />
-        <button class="dl-btn" id="downloadBtn" onclick="handleDownload()">
-          ⬇ Fetch
+        <button class="dl-btn" id="downloadBtn">
+          <span id="dlBtnText">⬇ Fetch</span>
         </button>
       </div>
-      <p class="hint">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <p class="hint" id="hintText">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
         </svg>
         Supports Reels, Posts, and IGTV. Content must be publicly accessible.
       </p>
     </div>
 
-    <div class="loader-wrap" id="loader" role="status" aria-live="polite">
-      <div class="spinner"></div>
+    <!-- ─── LOADER ───────────────────────────────────── -->
+    <div class="loader-wrap" id="loader" role="status" aria-live="polite" aria-label="Loading">
+      <div class="spinner-ring" aria-hidden="true"></div>
       <div class="loader-text" id="loaderText">Fetching video info…</div>
     </div>
 
+    <!-- ─── ERROR BOX ────────────────────────────────── -->
     <div class="error-box" id="errorBox" role="alert">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
       </svg>
       <span id="errorText">Something went wrong.</span>
     </div>
 
-    <div class="result-card" id="resultCard">
+    <!-- ─── RESULT CARD ───────────────────────────────── -->
+    <div class="result-card" id="resultCard" aria-live="polite">
       <div class="thumb-wrap" id="thumbWrap">
-        <div class="thumb-placeholder" id="thumbPlaceholder">
+        <div class="thumb-placeholder" id="thumbPlaceholder" aria-hidden="true">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
             <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M10 8l6 4-6 4V8z"/>
           </svg>
         </div>
-        <div class="play-overlay">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="white" opacity="0.9">
-            <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.4)" stroke="white" stroke-width="1.5"/>
+        <div class="play-overlay" aria-hidden="true">
+          <svg width="62" height="62" viewBox="0 0 24 24" fill="white" opacity="0.9">
+            <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.45)" stroke="white" stroke-width="1.5"/>
             <path d="M10 8l6 4-6 4V8z"/>
           </svg>
         </div>
       </div>
-
       <div class="result-info">
         <div class="result-meta">
           <div class="result-title" id="resultTitle">Video Title</div>
           <div class="result-uploader" id="resultUploader"></div>
         </div>
         <div class="result-actions">
-          <!-- ✅ FIX 2: download attribute added so browser saves instead of opening -->
-          <a class="btn-download" id="downloadLink" href="#" download="reelripper_video.mp4" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <a class="btn-download" id="downloadLink" href="#" download="reelripper_video.mp4" target="_blank" rel="noopener noreferrer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
               <path d="M12 5v14M5 12l7 7 7-7"/>
             </svg>
-            Download Video
+            <span id="dlLinkText">Download Video</span>
           </a>
-          <button class="btn-copy" id="copyBtn" onclick="copyLink()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <button class="btn-copy" id="copyBtn" aria-label="Copy video link">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
               <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
-            Copy Link
+            <span id="copyBtnText">Copy Link</span>
           </button>
         </div>
       </div>
     </div>
 
+    <!-- ─── HOW IT WORKS ─────────────────────────────── -->
     <div class="how-it-works" aria-label="How it works">
       <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-label">Copy an Instagram reel or post URL</div>
+        <div class="step-num" aria-hidden="true">1</div>
+        <div class="step-label" id="step1Text">Copy an Instagram reel or post URL</div>
       </div>
       <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-label">Paste it above and click Fetch</div>
+        <div class="step-num" aria-hidden="true">2</div>
+        <div class="step-label" id="step2Text">Paste it above and click Fetch</div>
       </div>
       <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-label">Download the video directly</div>
+        <div class="step-num" aria-hidden="true">3</div>
+        <div class="step-label" id="step3Text">Download the video directly</div>
       </div>
     </div>
-  </div>
+
+    <!-- ─── GUIDE + FAQ CARD ─────────────────────────── -->
+    <div class="guide-card">
+
+      <!-- ══ ENGLISH GUIDE ══ -->
+      <div class="lang-content active-lang" id="guide-en">
+        <div class="guide-header">
+          <h2>⚡ Instagram Video Downloader</h2>
+          <p>Fast &nbsp;·&nbsp; Free &nbsp;·&nbsp; No Registration Required</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD Quality</span></div>
+          <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">No Login</span></div>
+          <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">All Devices</span></div>
+          <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">Fast</span></div>
+        </div>
+
+        <div class="divider"></div>
+        <p class="guide-sub">📥 How to Download Instagram Videos?</p>
+        <div class="steps-container">
+          <div class="step-item"><div class="step-number">1</div><div class="step-text">Open Instagram and find the reel or post you want</div></div>
+          <div class="step-item"><div class="step-number">2</div><div class="step-text">Tap the three-dot menu → Copy Link</div></div>
+          <div class="step-item"><div class="step-number">3</div><div class="step-text">Paste the link in the input box above</div></div>
+          <div class="step-item"><div class="step-number">4</div><div class="step-text">Click "Fetch", then "Download Video" to save</div></div>
+        </div>
+
+        <div class="divider"></div>
+        <p class="guide-sub">📱 Supported Devices &amp; Browsers</p>
+        <div class="devices-list">
+          <span class="device-badge">📱 Android</span>
+          <span class="device-badge">🍎 iPhone / iPad</span>
+          <span class="device-badge">💻 Windows</span>
+          <span class="device-badge">🍏 Mac</span>
+          <span class="device-badge">🌐 Chrome</span>
+          <span class="device-badge">🦊 Firefox</span>
+          <span class="device-badge">🧭 Safari</span>
+          <span class="device-badge">🖥️ Edge</span>
+        </div>
+
+        <div class="divider"></div>
+        <div class="safety-box">
+          <div class="safety-icon">🔒</div>
+          <div class="safety-text"><strong>100% Safe &amp; Secure</strong><br>We never store your data or URLs. Videos are streamed directly from Instagram's servers.</div>
+        </div>
+
+        <div class="divider"></div>
+        <p class="guide-sub">❓ Frequently Asked Questions</p>
+        <div class="faq-container">
+          <div class="faq-item">
+            <div class="faq-question">Is ReelRipper completely free? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">Yes — 100% free. No hidden charges, no subscription, no account required.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">Can I download private Instagram videos? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">No. Only content from public accounts can be downloaded. Private account videos are not accessible.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">What video quality can I expect? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">We fetch the highest available quality (up to 1080p HD), matching the original upload quality on Instagram.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">Do I need to install any software? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">No installation needed. ReelRipper works entirely in your browser on any device.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">Is downloading Instagram videos legal? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">Downloading for personal offline viewing is generally acceptable. Redistribution or commercial use without the creator's permission is not allowed.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">Why is my download not starting? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">Make sure the link is correct and the account is public. If the problem persists, try copying the link again from the Instagram app.</div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div class="note-icon">⚠️</div>
+          <div class="note-text"><strong>Reminder:</strong> Only download publicly available content. Respect copyright and always credit creators.</div>
+        </div>
+      </div>
+
+      <!-- ══ HINDI GUIDE ══ -->
+      <div class="lang-content" id="guide-hi">
+        <div class="guide-header">
+          <h2>⚡ इंस्टाग्राम वीडियो डाउनलोडर</h2>
+          <p>तेज़ &nbsp;·&nbsp; मुफ्त &nbsp;·&nbsp; बिना रजिस्ट्रेशन के</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD क्वालिटी</span></div>
+          <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">बिना लॉगिन</span></div>
+          <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">सभी डिवाइस</span></div>
+          <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">तेज़</span></div>
+        </div>
+
+        <div class="divider"></div>
+        <p class="guide-sub">📥 इंस्टाग्राम वीडियो कैसे डाउनलोड करें?</p>
+        <div class="steps-container">
+          <div class="step-item"><div class="step-number">1</div><div class="step-text">इंस्टाग्राम खोलें और जो रील या पोस्ट चाहिए उसे ढूंढें</div></div>
+          <div class="step-item"><div class="step-number">2</div><div class="step-text">तीन-बिंदु मेनू (⋯) पर टैप करें → Link Copy करें</div></div>
+          <div class="step-item"><div class="step-number">3</div><div class="step-text">ऊपर दिए बॉक्स में लिंक पेस्ट करें</div></div>
+          <div class="step-item"><div class="step-number">4</div><div class="step-text">"Fetch" क्लिक करें, फिर "Download Video" से सेव करें</div></div>
+        </div>
+
+        <div class="divider"></div>
+        <p class="guide-sub">📱 सपोर्टेड डिवाइस और ब्राउज़र</p>
+        <div class="devices-list">
+          <span class="device-badge">📱 एंड्रॉइड</span>
+          <span class="device-badge">🍎 आईफोन / आईपैड</span>
+          <span class="device-badge">💻 विंडोज</span>
+          <span class="device-badge">🍏 मैक</span>
+          <span class="device-badge">🌐 क्रोम</span>
+          <span class="device-badge">🦊 फ़ायरफ़ॉक्स</span>
+          <span class="device-badge">🧭 सफारी</span>
+          <span class="device-badge">🖥️ Edge</span>
+        </div>
+
+        <div class="divider"></div>
+        <div class="safety-box">
+          <div class="safety-icon">🔒</div>
+          <div class="safety-text"><strong>100% सुरक्षित</strong><br>हम आपका डेटा या URL कभी स्टोर नहीं करते। वीडियो सीधे इंस्टाग्राम के सर्वर से आते हैं।</div>
+        </div>
+
+        <div class="divider"></div>
+        <p class="guide-sub">❓ अक्सर पूछे जाने वाले सवाल</p>
+        <div class="faq-container">
+          <div class="faq-item">
+            <div class="faq-question">क्या ReelRipper पूरी तरह मुफ्त है? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">हाँ — 100% मुफ्त। कोई छुपा हुआ शुल्क, सब्सक्रिप्शन या अकाउंट की ज़रूरत नहीं।</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">क्या प्राइवेट वीडियो डाउनलोड हो सकते हैं? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">नहीं। केवल पब्लिक अकाउंट के वीडियो डाउनलोड होते हैं। प्राइवेट अकाउंट के वीडियो एक्सेस नहीं होते।</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">वीडियो किस क्वालिटी में मिलता है? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">हम सबसे अधिक उपलब्ध क्वालिटी (1080p HD तक) लाते हैं, जो ओरिजिनल अपलोड के बराबर है।</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">क्या कोई सॉफ्टवेयर इंस्टॉल करना होगा? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">नहीं। ReelRipper पूरी तरह ब्राउज़र में काम करता है। किसी भी डिवाइस पर।</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">इंस्टाग्राम वीडियो डाउनलोड करना कानूनी है? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">निजी ऑफलाइन देखने के लिए ठीक है। बिना अनुमति के री-पोस्ट या कमर्शियल उपयोग नहीं करना चाहिए।</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">डाउनलोड शुरू क्यों नहीं हो रहा? <span class="faq-icon" aria-hidden="true">▼</span></div>
+            <div class="faq-answer">सुनिश्चित करें कि लिंक सही है और अकाउंट पब्लिक है। इंस्टाग्राम ऐप से दोबारा लिंक कॉपी करके आज़माएं।</div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div class="note-icon">⚠️</div>
+          <div class="note-text"><strong>याद रखें:</strong> केवल पब्लिक कंटेंट डाउनलोड करें। कॉपीराइट का सम्मान करें और क्रिएटर्स को क्रेडिट दें।</div>
+        </div>
+      </div>
+
+    </div><!-- end .guide-card -->
+
+  </div><!-- end .wrapper -->
 
   <footer>
-    ReelRipper is not affiliated with Instagram / Meta. Use responsibly and respect creators. &nbsp;·&nbsp;
-    <a href="https://github.com/yt-dlp/yt-dlp" target="_blank">Powered by yt-dlp</a>
+    ReelRipper is not affiliated with Instagram / Meta. Use responsibly and respect creators.
+    &nbsp;·&nbsp; <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">Powered by yt-dlp</a>
   </footer>
 
   <script>
-    // ✅ FIX 3: Apna Render URL yahan daal do
+    /* ─── CONFIG ────────────────────────────────────── */
     const API_BASE = "https://instagram-downloader-t0pq.onrender.com";
 
-    const LOADER_MESSAGES = [
+    const LOADER_MESSAGES_EN = [
       "Fetching video info…",
       "Talking to Instagram…",
       "Extracting stream URL…",
       "Almost there…"
     ];
+    const LOADER_MESSAGES_HI = [
+      "वीडियो जानकारी ला रहे हैं…",
+      "Instagram से बात हो रही है…",
+      "Stream URL निकाल रहे हैं…",
+      "बस थोड़ा और…"
+    ];
 
-    let loaderInterval = null;
+    /* ─── I18N STRINGS ──────────────────────────────── */
+    const i18n = {
+      en: {
+        tagline:    "Instagram video downloader — fast & free",
+        inputLabel: "Paste your Instagram link",
+        placeholder:"https://www.instagram.com/reel/...",
+        dlBtn:      "⬇ Fetch",
+        hint:       "Supports Reels, Posts, and IGTV. Content must be publicly accessible.",
+        dlLink:     "Download Video",
+        copyBtn:    "Copy Link",
+        copiedBtn:  "Copied!",
+        step1:      "Copy an Instagram reel or post URL",
+        step2:      "Paste it above and click Fetch",
+        step3:      "Download the video directly",
+        errEmpty:   "Please paste an Instagram URL first.",
+        errInvalid: "That doesn't look like an Instagram link.",
+        errServer:  "Cannot reach backend server. Check: " + API_BASE,
+      },
+      hi: {
+        tagline:    "इंस्टाग्राम वीडियो डाउनलोडर — तेज़ और मुफ्त",
+        inputLabel: "इंस्टाग्राम लिंक यहाँ पेस्ट करें",
+        placeholder:"https://www.instagram.com/reel/...",
+        dlBtn:      "⬇ फेच करें",
+        hint:       "Reels, Posts और IGTV सपोर्ट करता है। कंटेंट पब्लिक होना चाहिए।",
+        dlLink:     "वीडियो डाउनलोड करें",
+        copyBtn:    "लिंक कॉपी करें",
+        copiedBtn:  "कॉपी हो गया!",
+        step1:      "इंस्टाग्राम रील या पोस्ट का URL कॉपी करें",
+        step2:      "ऊपर पेस्ट करें और Fetch दबाएं",
+        step3:      "सीधे वीडियो डाउनलोड करें",
+        errEmpty:   "पहले इंस्टाग्राम URL पेस्ट करें।",
+        errInvalid: "यह इंस्टाग्राम लिंक नहीं लग रहा।",
+        errServer:  "Backend server से connect नहीं हो पा रहा। Check करें: " + API_BASE,
+      }
+    };
+
+    let currentLang = "en";
     let currentVideoUrl = "";
+    let loaderInterval = null;
 
-    // ── Theme Toggle ──
-    const html = document.documentElement;
-    const themeToggle = document.getElementById("themeToggle");
-    const themeIcon   = document.getElementById("themeIcon");
-    const themeLabel  = document.getElementById("themeLabel");
+    /* ─── APPLY I18N ────────────────────────────────── */
+    function applyI18n(lang) {
+      const t = i18n[lang];
+      document.getElementById("taglineText").textContent    = t.tagline;
+      document.getElementById("inputLabel").textContent     = t.inputLabel;
+      document.getElementById("urlInput").placeholder       = t.placeholder;
+      document.getElementById("dlBtnText").textContent      = t.dlBtn;
+      document.getElementById("hintText").lastChild.textContent = " " + t.hint;
+      document.getElementById("dlLinkText").textContent     = t.dlLink;
+      document.getElementById("copyBtnText").textContent    = t.copyBtn;
+      document.getElementById("step1Text").textContent      = t.step1;
+      document.getElementById("step2Text").textContent      = t.step2;
+      document.getElementById("step3Text").textContent      = t.step3;
+    }
 
-    const savedTheme = localStorage.getItem("rr-theme") || "dark";
-    setTheme(savedTheme);
+    /* ─── LANGUAGE SWITCH ───────────────────────────── */
+    document.querySelectorAll(".lang-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const lang = btn.getAttribute("data-lang");
+        if (lang === currentLang) return;
+        currentLang = lang;
+
+        // Update buttons
+        document.querySelectorAll(".lang-btn").forEach(b => {
+          b.classList.toggle("active", b.getAttribute("data-lang") === lang);
+          b.setAttribute("aria-pressed", b.getAttribute("data-lang") === lang);
+        });
+
+        // Swap guide sections
+        document.getElementById("guide-en").classList.toggle("active-lang", lang === "en");
+        document.getElementById("guide-hi").classList.toggle("active-lang", lang === "hi");
+
+        // Update i18n strings
+        applyI18n(lang);
+
+        // Update hint SVG sibling — rebuild clean
+        const hint = document.getElementById("hintText");
+        hint.childNodes.forEach(n => { if (n.nodeType === 3) n.remove(); });
+        hint.appendChild(document.createTextNode(" " + i18n[lang].hint));
+      });
+    });
+
+    /* ─── THEME TOGGLE ──────────────────────────────── */
+    const html       = document.documentElement;
+    const themeToggle= document.getElementById("themeToggle");
+    const themeIcon  = document.getElementById("themeIcon");
+    const themeLabel = document.getElementById("themeLabel");
+    const SUN_PATH   = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
+    const MOON_PATH  = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
 
     function setTheme(theme) {
       html.dataset.theme = theme;
-      localStorage.setItem("rr-theme", theme);
+      try { localStorage.setItem("rr-theme", theme); } catch {}
       if (theme === "dark") {
-        themeLabel.textContent = "Light Mode";
-        themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
+        themeLabel.textContent = "Light";
+        themeIcon.innerHTML = SUN_PATH;
       } else {
-        themeLabel.textContent = "Dark Mode";
-        themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+        themeLabel.textContent = "Dark";
+        themeIcon.innerHTML = MOON_PATH;
       }
     }
+
+    try {
+      const saved = localStorage.getItem("rr-theme") || "dark";
+      setTheme(saved);
+    } catch { setTheme("dark"); }
 
     themeToggle.addEventListener("click", () => {
       setTheme(html.dataset.theme === "dark" ? "light" : "dark");
     });
 
-    // ── UI Helpers ──
+    /* ─── UI HELPERS ────────────────────────────────── */
     function showLoader() {
       document.getElementById("loader").classList.add("visible");
-      hideResult(); hideError();
-      let idx = 0;
+      hideResult();
+      hideError();
+      const messages = currentLang === "hi" ? LOADER_MESSAGES_HI : LOADER_MESSAGES_EN;
       const el = document.getElementById("loaderText");
-      el.textContent = LOADER_MESSAGES[0];
+      let idx = 0;
+      el.textContent = messages[0];
       loaderInterval = setInterval(() => {
-        idx = (idx + 1) % LOADER_MESSAGES.length;
-        el.textContent = LOADER_MESSAGES[idx];
-      }, 1400);
+        idx = (idx + 1) % messages.length;
+        el.textContent = messages[idx];
+      }, 1500);
     }
 
     function hideLoader() {
       document.getElementById("loader").classList.remove("visible");
       clearInterval(loaderInterval);
+      loaderInterval = null;
     }
 
     function showError(msg) {
@@ -391,12 +1138,14 @@
     }
 
     function showResult(data) {
-      const card = document.getElementById("resultCard");
-      document.getElementById("resultTitle").textContent = data.title || "Instagram Video";
-      document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
-
+      const card        = document.getElementById("resultCard");
       const thumbWrap   = document.getElementById("thumbWrap");
       const placeholder = document.getElementById("thumbPlaceholder");
+
+      document.getElementById("resultTitle").textContent    = data.title || "Instagram Video";
+      document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
+
+      // Remove old thumb
       const oldImg = thumbWrap.querySelector("img");
       if (oldImg) oldImg.remove();
 
@@ -405,6 +1154,7 @@
         const img = document.createElement("img");
         img.src = data.thumbnail;
         img.alt = data.title || "Video thumbnail";
+        img.loading = "lazy";
         img.onerror = () => { placeholder.style.display = "flex"; img.remove(); };
         thumbWrap.insertBefore(img, thumbWrap.firstChild);
       } else {
@@ -421,26 +1171,31 @@
       document.getElementById("resultCard").classList.remove("visible");
     }
 
-    document.getElementById("urlInput").addEventListener("keydown", (e) => {
+    /* ─── DOWNLOAD HANDLER ──────────────────────────── */
+    document.getElementById("urlInput").addEventListener("keydown", e => {
       if (e.key === "Enter") handleDownload();
     });
 
-    // ✅ FIX 4: Correct endpoint /download (not /api/download)
+    document.getElementById("downloadBtn").addEventListener("click", handleDownload);
+
     async function handleDownload() {
       const url = document.getElementById("urlInput").value.trim();
       const btn = document.getElementById("downloadBtn");
+      const t   = i18n[currentLang];
 
-      if (!url) { showError("Please paste an Instagram URL first."); return; }
-      if (!url.includes("instagram.com")) { showError("That doesn't look like an Instagram link."); return; }
+      if (!url)                          { showError(t.errEmpty);   return; }
+      if (!url.includes("instagram.com")){ showError(t.errInvalid); return; }
 
       btn.disabled = true;
+      hideError();
       showLoader();
 
       try {
         const response = await fetch(`${API_BASE}/download`, {
-          method: "POST",
+          method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body:    JSON.stringify({ url }),
+          signal:  AbortSignal.timeout(30000),
         });
 
         const data = await response.json();
@@ -454,8 +1209,8 @@
 
       } catch (err) {
         hideLoader();
-        if (err.message === "Failed to fetch") {
-          showError("Backend server se connect nahi ho pa raha. Check karo: " + API_BASE);
+        if (err.name === "TimeoutError" || err.message === "Failed to fetch") {
+          showError(t.errServer);
         } else {
           showError(err.message || "Unknown error occurred.");
         }
@@ -464,29 +1219,44 @@
       }
     }
 
-    // ✅ FIX 5: copyLink — stray fetch() hata diya, sirf clipboard copy karo
+    /* ─── COPY LINK ─────────────────────────────────── */
+    document.getElementById("copyBtn").addEventListener("click", copyLink);
+
     async function copyLink() {
       if (!currentVideoUrl) return;
-      const btn = document.getElementById("copyBtn");
+      const btn  = document.getElementById("copyBtn");
+      const span = document.getElementById("copyBtnText");
+      const t    = i18n[currentLang];
+
       try {
         await navigator.clipboard.writeText(currentVideoUrl);
         btn.classList.add("copied");
-        btn.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M20 6L9 17l-5-5"/>
-          </svg> Copied!`;
+        span.textContent = t.copiedBtn;
+        btn.querySelector("svg").innerHTML = `<path d="M20 6L9 17l-5-5"/>`;
         setTimeout(() => {
           btn.classList.remove("copied");
-          btn.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <rect x="9" y="9" width="13" height="13" rx="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg> Copy Link`;
-        }, 2000);
+          span.textContent = t.copyBtn;
+          btn.querySelector("svg").innerHTML = `<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>`;
+        }, 2200);
       } catch {
-        showError("Clipboard copy nahi ho saka.");
+        showError(currentLang === "hi" ? "Clipboard copy नहीं हो सका।" : "Failed to copy to clipboard.");
       }
     }
+
+    /* ─── FAQ ACCORDION ─────────────────────────────── */
+    document.addEventListener("click", e => {
+      const q = e.target.closest(".faq-question");
+      if (!q) return;
+      const item = q.closest(".faq-item");
+      const wasActive = item.classList.contains("active");
+      // Close all
+      document.querySelectorAll(".faq-item.active").forEach(i => i.classList.remove("active"));
+      // Toggle clicked
+      if (!wasActive) item.classList.add("active");
+    });
+
+    /* ─── INIT ──────────────────────────────────────── */
+    applyI18n("en");
   </script>
 </body>
 </html>

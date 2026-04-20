@@ -105,7 +105,7 @@
     .nav-inner {
       max-width: 900px; width: 100%; margin: 0 auto;
       padding: 0 24px;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      display: flex; align-items: center; justify-content: space-between;
     }
 
     /* Logo */
@@ -120,26 +120,8 @@
       cursor: pointer;
     }
 
-    /* Nav links */
-    .nav-links {
-      display: flex; align-items: center; gap: 6px;
-      flex: 1; justify-content: center;
-    }
-    .nav-link {
-      font-size: 13px; font-weight: 500;
-      color: var(--text-muted); text-decoration: none;
-      padding: 6px 14px; border-radius: 50px;
-      transition: all var(--t); cursor: pointer;
-      border: none; background: none;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .nav-link:hover, .nav-link.active {
-      color: var(--text);
-      background: var(--surface2);
-    }
-
     /* Nav right actions */
-    .nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
 
     /* Language pill */
     .lang-pill {
@@ -170,20 +152,6 @@
       transition: all var(--t); white-space: nowrap;
     }
     .theme-btn:hover { border-color: var(--border-h); color: var(--text); }
-
-    /* PAGES - Scroll Snap */
-    .pages-container {
-      scroll-snap-type: y mandatory;
-      overflow-y: auto;
-      height: calc(100vh - var(--nav-h));
-    }
-    .page {
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
-      min-height: calc(100vh - var(--nav-h));
-      display: none;
-    }
-    .page.active { display: block; }
 
     /* WRAPPER */
     .wrapper {
@@ -259,15 +227,6 @@
       margin-top: 10px; font-size: 11.5px; color: var(--text-muted);
       display: flex; align-items: center; gap: 6px; line-height: 1.4;
     }
-    .faq-link {
-      text-align: center; margin-top: -10px;
-    }
-    .faq-link a {
-      color: var(--accent); text-decoration: none; font-size: 13px;
-      display: inline-flex; align-items: center; gap: 5px;
-      transition: all var(--t);
-    }
-    .faq-link a:hover { color: var(--accent2); gap: 8px; }
 
     /* LOADER */
     .loader-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0; }
@@ -369,15 +328,19 @@
     }
     .how-label { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
 
-    /* FAQ PAGE */
-    .faq-hero {
+    /* FAQ SECTION */
+    .faq-section {
+      margin-top: 32px;
+      scroll-margin-top: 80px;
+    }
+    .faq-header {
       text-align: center; padding: 12px 0 24px;
     }
-    .faq-hero h1 {
-      font-family: 'Syne', sans-serif; font-size: clamp(1.5rem, 4vw, 2.2rem);
+    .faq-header h2 {
+      font-family: 'Syne', sans-serif; font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px;
     }
-    .faq-hero p { font-size: 13px; color: var(--text-muted); }
+    .faq-header p { font-size: 13px; color: var(--text-muted); }
 
     .guide-section {
       background: var(--surface); border: 1px solid var(--border);
@@ -515,15 +478,10 @@
 
 <div class="bg-mesh" aria-hidden="true"></div>
 
-<!-- NAVBAR -->
+<!-- NAVBAR - Only logo, language and theme toggle -->
 <nav class="navbar">
   <div class="nav-inner">
-    <span class="nav-logo" onclick="goToHome()">InstaGet</span>
-
-    <!-- Only FAQ link in navbar (without book emoji and without "Guide") -->
-    <div class="nav-links">
-      <button class="nav-link" onclick="goToFAQ()" id="nav-faq">FAQ</button>
-    </div>
+    <span class="nav-logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">InstaGet</span>
 
     <!-- Right: Language + Theme -->
     <div class="nav-actions">
@@ -542,126 +500,104 @@
   </div>
 </nav>
 
-<!-- PAGE: HOME -->
-<div class="page active" id="page-home">
-  <div class="wrapper">
+<!-- MAIN CONTENT - Single page with everything -->
+<div class="wrapper">
 
-    <div class="hero-text">
-      <h1>Download Instagram <span>Reels, Photos</span> & Videos</h1>
-      <p>Paste any public Instagram link — Reels, Posts, Photos or Stories. Get HD quality instantly, no login needed.</p>
-    </div>
-
-    <!-- Input Card -->
-    <div class="card">
-      <label class="input-label" for="urlInput" id="inputLabel">Paste Instagram Link</label>
-      <div class="input-row">
-        <input id="urlInput" class="url-input" type="url"
-          placeholder="https://www.instagram.com/reel/..."
-          autocomplete="off" spellcheck="false" />
-        <button class="btn-fetch" id="fetchBtn"><span id="fetchBtnText">⬇ Fetch</span></button>
-        <button class="btn-clear" id="clearBtn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          <span id="clearBtnText">Clear</span>
-        </button>
-      </div>
-      <p class="hint" id="hintText">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.
-      </p>
-    </div>
-
-    <!-- FAQ quick link -->
-    <div class="faq-link">
-      <a href="#" onclick="goToFAQ(); return false;">
-        <span>Need help? Check our FAQ</span>
-        <span>→</span>
-      </a>
-    </div>
-
-    <!-- Loader -->
-    <div class="loader-wrap" id="loader">
-      <div class="spinner-ring"></div>
-      <div class="loader-text" id="loaderText">Fetching…</div>
-    </div>
-
-    <!-- Error -->
-    <div class="error-box" id="errorBox">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-      <span id="errorText">Something went wrong.</span>
-    </div>
-
-    <!-- Result -->
-    <div class="result-card" id="resultCard">
-      <div class="media-area" id="videoWrap" style="display:none;">
-        <video id="videoPlayer" controls playsinline preload="metadata"></video>
-        <span class="content-badge" id="videoBadge">🎬 VIDEO</span>
-      </div>
-
-      <div class="media-area" id="photoWrap" style="display:none;">
-        <img id="photoDisplay" class="photo-display" alt="Instagram Photo" crossorigin="anonymous" />
-        <span class="content-badge">📷 PHOTO</span>
-      </div>
-
-      <div class="thumb-wrap" id="thumbWrap">
-        <div class="thumb-placeholder" id="thumbPlaceholder">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-            <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M10 8l6 4-6 4V8z"/>
-          </svg>
-        </div>
-      </div>
-
-      <div class="result-info">
-        <div>
-          <div class="result-title" id="resultTitle">Title</div>
-          <div class="result-uploader" id="resultUploader"></div>
-        </div>
-        <div class="result-actions">
-          <a class="btn-download" id="downloadLink" href="#" download="instaget_media" target="_blank" rel="noopener noreferrer">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-            <span id="dlLinkText">Download</span>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- How it works -->
-    <div class="how-it-works">
-      <div class="how-step">
-        <div class="how-num">1</div>
-        <div class="how-label" id="step1Text">Copy an Instagram link</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">2</div>
-        <div class="how-label" id="step2Text">Paste above & click Fetch</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">3</div>
-        <div class="how-label" id="step3Text">Download in HD quality</div>
-      </div>
-    </div>
-
-    <!-- SEO Block -->
-    <div class="seo-block">
-      <h2>Best Free Instagram Video Downloader Online</h2>
-      <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
-      <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download — your file is ready in HD quality.</p>
-    </div>
-
+  <!-- HERO -->
+  <div class="hero-text">
+    <h1>Download Instagram <span>Reels, Photos</span> & Videos</h1>
+    <p>Paste any public Instagram link — Reels, Posts, Photos or Stories. Get HD quality instantly, no login needed.</p>
   </div>
-</div>
 
-<!-- PAGE: FAQ -->
-<div class="page" id="page-faq">
-  <div class="wrapper">
+  <!-- Input Card -->
+  <div class="card">
+    <label class="input-label" for="urlInput" id="inputLabel">Paste Instagram Link</label>
+    <div class="input-row">
+      <input id="urlInput" class="url-input" type="url"
+        placeholder="https://www.instagram.com/reel/..."
+        autocomplete="off" spellcheck="false" />
+      <button class="btn-fetch" id="fetchBtn"><span id="fetchBtnText">⬇ Fetch</span></button>
+      <button class="btn-clear" id="clearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        <span id="clearBtnText">Clear</span>
+      </button>
+    </div>
+    <p class="hint" id="hintText">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.
+    </p>
+  </div>
 
-    <div class="faq-hero">
-      <h1 id="faqPageTitle">FAQ</h1>
-      <p id="faqPageSub">Everything you need to know about InstaGet</p>
+  <!-- Loader -->
+  <div class="loader-wrap" id="loader">
+    <div class="spinner-ring"></div>
+    <div class="loader-text" id="loaderText">Fetching…</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    <span id="errorText">Something went wrong.</span>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="media-area" id="videoWrap" style="display:none;">
+      <video id="videoPlayer" controls playsinline preload="metadata"></video>
+      <span class="content-badge" id="videoBadge">🎬 VIDEO</span>
     </div>
 
-    <!-- Guide Section -->
-    <div class="guide-section" id="faqContent">
+    <div class="media-area" id="photoWrap" style="display:none;">
+      <img id="photoDisplay" class="photo-display" alt="Instagram Photo" crossorigin="anonymous" />
+      <span class="content-badge">📷 PHOTO</span>
+    </div>
 
+    <div class="thumb-wrap" id="thumbWrap">
+      <div class="thumb-placeholder" id="thumbPlaceholder">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M10 8l6 4-6 4V8z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="result-info">
+      <div>
+        <div class="result-title" id="resultTitle">Title</div>
+        <div class="result-uploader" id="resultUploader"></div>
+      </div>
+      <div class="result-actions">
+        <a class="btn-download" id="downloadLink" href="#" download="instaget_media" target="_blank" rel="noopener noreferrer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          <span id="dlLinkText">Download</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="how-it-works">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <div class="how-label" id="step1Text">Copy an Instagram link</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <div class="how-label" id="step2Text">Paste above & click Fetch</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <div class="how-label" id="step3Text">Download in HD quality</div>
+    </div>
+  </div>
+
+  <!-- FAQ SECTION -->
+  <div class="faq-section" id="faq">
+    <div class="faq-header">
+      <h2 id="faqTitle">Need help? Check our FAQ </h2>
+      <p id="faqSub">Everything you need to know about InstaGet</p>
+    </div>
+
+    <div class="guide-section">
       <!-- ENGLISH -->
       <div class="lang-content active" id="guide-en">
         <div class="features-grid" style="margin-bottom:0;">
@@ -795,10 +731,17 @@
           <div class="note-text"><strong>याद रखें:</strong> केवल पब्लिक कंटेंट डाउनलोड करें। Copyright का सम्मान करें।</div>
         </div>
       </div>
-
-    </div><!-- end guide-section -->
+    </div>
   </div>
-</div>
+
+  <!-- SEO Block -->
+  <div class="seo-block">
+    <h2>Best Free Instagram Video Downloader Online</h2>
+    <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
+    <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download — your file is ready in HD quality.</p>
+  </div>
+
+</div><!-- end wrapper -->
 
 <!-- FOOTER -->
 <footer>
@@ -825,7 +768,7 @@
       errEmpty:"Please paste an Instagram URL first.",
       errInvalid:"That doesn't look like an Instagram link.",
       errServer:"Cannot reach server. Check: "+API_BASE,
-      faqTitle:"FAQ", faqSub:"Everything you need to know about InstaGet",
+      faqTitle:"Frequently Asked Questions", faqSub:"Everything you need to know about InstaGet",
     },
     hi: {
       inputLabel:"इंस्टाग्राम लिंक पेस्ट करें", dlBtn:"⬇ फेच करें", clearBtn:"हटाएं",
@@ -835,7 +778,7 @@
       errEmpty:"पहले Instagram URL पेस्ट करें।",
       errInvalid:"यह Instagram लिंक नहीं लग रहा।",
       errServer:"Server से connect नहीं हो पा रहा। Check करें: "+API_BASE,
-      faqTitle:"FAQ", faqSub:"InstaGet के बारे में सब कुछ जानें",
+      faqTitle:"अक्सर पूछे जाने वाले सवाल", faqSub:"InstaGet के बारे में सब कुछ जानें",
     }
   };
 
@@ -852,8 +795,8 @@
     document.getElementById("step1Text").textContent   = t.step1;
     document.getElementById("step2Text").textContent   = t.step2;
     document.getElementById("step3Text").textContent   = t.step3;
-    document.getElementById("faqPageTitle").textContent= t.faqTitle;
-    document.getElementById("faqPageSub").textContent  = t.faqSub;
+    document.getElementById("faqTitle").textContent    = t.faqTitle;
+    document.getElementById("faqSub").textContent      = t.faqSub;
     
     const hint = document.getElementById("hintText");
     const svg  = hint.querySelector("svg").cloneNode(true);
@@ -873,77 +816,6 @@
   document.querySelectorAll(".lang-btn").forEach(btn => {
     btn.addEventListener("click", () => applyLang(btn.dataset.lang));
   });
-
-  /* ── Page routing with scroll support ── */
-  function goToHome() {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById("page-home").classList.add("active");
-    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    // Update URL hash without scrolling
-    history.replaceState(null, null, '#home');
-  }
-
-  function goToFAQ() {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById("page-faq").classList.add("active");
-    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-    document.getElementById("nav-faq").classList.add("active");
-    document.getElementById("faqContent").scrollIntoView({ behavior: 'smooth', block: 'start' });
-    history.replaceState(null, null, '#faq');
-  }
-
-  // Handle scroll to show FAQ when scrolling down
-  let lastScrollTop = 0;
-  let isScrolling = false;
-  
-  window.addEventListener('scroll', () => {
-    if (isScrolling) return;
-    
-    const homePage = document.getElementById('page-home');
-    const faqPage = document.getElementById('page-faq');
-    const scrollPosition = window.scrollY;
-    const windowHeight = window.innerHeight;
-    const homeHeight = homePage.offsetHeight;
-    
-    // If scrolled past home page, show FAQ
-    if (scrollPosition > homeHeight - 100 && homePage.classList.contains('active')) {
-      isScrolling = true;
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      faqPage.classList.add("active");
-      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-      document.getElementById("nav-faq").classList.add("active");
-      history.replaceState(null, null, '#faq');
-      setTimeout(() => { isScrolling = false; }, 100);
-    }
-    
-    // If scrolled back to top, show Home
-    if (scrollPosition < 100 && faqPage.classList.contains('active')) {
-      isScrolling = true;
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      homePage.classList.add("active");
-      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-      history.replaceState(null, null, '#home');
-      setTimeout(() => { isScrolling = false; }, 100);
-    }
-    
-    lastScrollTop = scrollPosition;
-  });
-
-  // Handle hash changes for direct navigation
-  window.addEventListener('hashchange', () => {
-    const hash = window.location.hash;
-    if (hash === '#faq') {
-      goToFAQ();
-    } else if (hash === '#home' || !hash) {
-      goToHome();
-    }
-  });
-
-  // Check initial hash
-  if (window.location.hash === '#faq') {
-    setTimeout(goToFAQ, 100);
-  }
 
   /* ── Theme ── */
   const html = document.documentElement;
@@ -999,7 +871,7 @@
     document.getElementById("thumbPlaceholder").style.display = "flex";
   }
 
-  /* ── Show Result with improved Photo Support ── */
+  /* ── Show Result ── */
   function showResult(data) {
     const card       = document.getElementById("resultCard");
     const videoWrap  = document.getElementById("videoWrap");
@@ -1014,7 +886,6 @@
     const dl = document.getElementById("downloadLink");
     dl.href = data.download_url || "#";
 
-    // Reset all
     videoWrap.style.display = "none";
     photoWrap.style.display = "none";
     thumbWrap.style.display = "none";
@@ -1024,18 +895,14 @@
     const mediaType = (data.media_type || "").toLowerCase();
     const downloadUrl = data.download_url || "";
     
-    // Better photo detection
     const isPhoto = mediaType.includes("photo") || 
                     mediaType.includes("image") || 
                     /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(downloadUrl) ||
                     data.ext === "jpg" || data.ext === "jpeg" || data.ext === "png";
     
-    // Better video detection
     const isVideo = mediaType.includes("video") || 
                     /\.(mp4|webm|mov|m4v)(\?|$)/i.test(downloadUrl) ||
                     data.ext === "mp4";
-
-    console.log("Media type:", mediaType, "isPhoto:", isPhoto, "isVideo:", isVideo, "URL:", downloadUrl);
 
     if (isPhoto && downloadUrl) {
         photoDisp.src = downloadUrl;
@@ -1044,7 +911,6 @@
         dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
         
         photoDisp.onerror = function() {
-            console.log("Photo failed to load, trying fallback...");
             if (data.thumbnail && data.thumbnail !== downloadUrl) {
                 photoDisp.src = data.thumbnail;
             } else {
@@ -1052,12 +918,6 @@
                 showThumbnail(data);
             }
         };
-        
-        // Also set thumbnail as backup
-        if (data.thumbnail) {
-            const img = new Image();
-            img.src = data.thumbnail;
-        }
         
     } else if (isVideo && downloadUrl) {
         videoPlayer.src = downloadUrl;
@@ -1067,17 +927,14 @@
         dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
         
         videoPlayer.onerror = function() {
-            console.log("Video failed to load, falling back to thumbnail");
             videoWrap.style.display = "none";
             showThumbnail(data);
         };
         
-        // Load poster if available
         if (data.thumbnail) {
             videoPlayer.poster = data.thumbnail;
         }
     } else {
-        // Fallback to thumbnail
         showThumbnail(data);
     }
 
@@ -1103,7 +960,6 @@
       placeholder.style.display = "flex";
     }
     
-    // Update download button
     const dl = document.getElementById("downloadLink");
     if (data.download_url) {
       dl.href = data.download_url;

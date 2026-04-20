@@ -983,15 +983,16 @@
     /* ─── CONFIG ────────────────────────────────────── */
     const API_BASE = "https://instagram-downloader-t0pq.onrender.com";
 
+
     const LOADER_MESSAGES_EN = [
       "Fetching video info…",
-      "Talking to Instagram…",
+      "Waking up server (first load ~30s)…",
       "Extracting stream URL…",
       "Almost there…"
     ];
     const LOADER_MESSAGES_HI = [
       "वीडियो जानकारी ला रहे हैं…",
-      "Instagram से बात हो रही है…",
+      "Server जगा रहे हैं (पहली बार ~30 सेकंड)…",
       "Stream URL निकाल रहे हैं…",
       "बस थोड़ा और…"
     ];
@@ -1195,7 +1196,7 @@
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ url }),
-          signal:  AbortSignal.timeout(30000),
+          signal:  AbortSignal.timeout(60000),
         });
 
         const data = await response.json();
@@ -1257,6 +1258,7 @@
 
     /* ─── INIT ──────────────────────────────────────── */
     applyI18n("en");
+
   </script>
 </body>
 </html>

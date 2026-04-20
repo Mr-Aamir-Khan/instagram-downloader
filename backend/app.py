@@ -1,6 +1,6 @@
 """
-Instagram Video/Photo Downloader - Flask Backend
-Fixed for both Video and Photo downloads
+Instagram Video/Photo/Story Downloader - Flask Backend
+Supports: Reels, Posts, Photos, Carousel, Stories
 """
 
 from flask import Flask, request, jsonify
@@ -9,7 +9,6 @@ import yt_dlp
 import re
 import time
 import os
-import requests
 
 app = Flask(__name__)
 
@@ -24,16 +23,22 @@ def is_instagram_url(url: str) -> bool:
     pattern = r"(https?://)?(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+"
     return bool(re.search(pattern, url))
 
+def is_story_url(url: str) -> bool:
+    """Check if URL is a story URL."""
+    return "/stories/" in url
+
 def extract_media_info(url: str) -> dict:
     """Extract media information from Instagram URL"""
     
-    # Clear cache if needed (optional)
     if len(_cache) > 50:
         _cache.clear()
     
     if url in _cache:
         print(f"Returning cached result for: {url}")
         return _cache[url]
+
+    is_story = is_story_url(url)
+    print(f"Processing URL: {url}, is_story: {is_story}")
 
     ydl_opts = {
         "quiet": True,
@@ -42,7 +47,9 @@ def extract_media_info(url: str) -> dict:
         "extract_flat": False,
         "format": "best",
         "extractor_args": {
-            "instagram": {"include_ads": False}
+            "instagram": {
+                "include_ads": False,
+            }
         },
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -60,129 +67,159 @@ def extract_media_info(url: str) -> dict:
         download_url = ""
         media_type = "unknown"
         thumbnail = info.get("thumbnail", "")
-        uploader = info.get("uploader", "")
+        uploader = info.get("uploader", "") or info.get("uploader_id", "")
         title = info.get("title", "Instagram Media")
         ext = ""
+        duration = info.get("duration")
         
-        # Check for entries (carousel/sidecar posts)
-        if "entries" in info and info["entries"]:
-            print(f"Carousel post detected with {len(info['entries'])} items")
-            entry = info["entries"][0]
+        # Story specific handling
+        if is_story or "story" in title.lower():
+            print("Processing as Story...")
+            media_type = "story"
             
-            # Check what's available in the first entry
-            print(f"Entry keys: {entry.keys()}")
-            
-            # Check for video
-            if entry.get("url") and entry.get("ext") in ["mp4", "webm"]:
-                download_url = entry["url"]
-                media_type = "video"
-                ext = entry.get("ext", "mp4")
-                print(f"Found video URL in carousel")
-            
-            # Check for image - different possible fields
-            elif entry.get("url") and entry.get("ext") in ["jpg", "jpeg", "png", "webp"]:
-                download_url = entry["url"]
-                media_type = "photo"
-                ext = entry.get("ext", "jpg")
-                print(f"Found image URL in carousel from url field")
-            
-            elif entry.get("thumbnail"):
-                download_url = entry["thumbnail"]
-                media_type = "photo"
-                ext = "jpg"
-                print(f"Using thumbnail as image in carousel")
-            
-            # Check for formats in entry
-            elif "formats" in entry and entry["formats"]:
-                for fmt in entry["formats"]:
-                    if fmt.get("ext") in ["jpg", "jpeg", "png", "webp"]:
-                        download_url = fmt.get("url", "")
-                        media_type = "photo"
-                        ext = fmt.get("ext", "jpg")
-                        print(f"Found image in entry formats")
-                        break
-                    elif fmt.get("ext") in ["mp4"]:
-                        download_url = fmt.get("url", "")
+            # For stories, check entries first
+            if "entries" in info and info["entries"]:
+                for entry in info["entries"]:
+                    # Video story
+                    if entry.get("url") and entry.get("ext") in ["mp4", "webm"]:
+                        download_url = entry["url"]
                         media_type = "video"
-                        ext = "mp4"
+                        ext = entry.get("ext", "mp4")
+                        if entry.get("thumbnail"):
+                            thumbnail = entry["thumbnail"]
+                        break
+                    # Photo story
+                    elif entry.get("url") and entry.get("ext") in ["jpg", "jpeg", "png", "webp"]:
+                        download_url = entry["url"]
+                        media_type = "photo"
+                        ext = entry.get("ext", "jpg")
+                        if entry.get("thumbnail"):
+                            thumbnail = entry["thumbnail"]
+                        break
+                    elif entry.get("thumbnail"):
+                        download_url = entry["thumbnail"]
+                        media_type = "photo"
+                        ext = "jpg"
                         break
             
-            # Update thumbnail if available
-            if entry.get("thumbnail"):
-                thumbnail = entry["thumbnail"]
-                
-        else:
-            # Single post
-            print(f"Single post detected")
-            
-            # Check direct URL
-            if info.get("url"):
-                url_ext = info.get("ext", "").lower()
-                print(f"Direct URL found with ext: {url_ext}")
-                
-                if url_ext in ["mp4", "webm", "mov"]:
-                    download_url = info["url"]
-                    media_type = "video"
-                    ext = url_ext
-                elif url_ext in ["jpg", "jpeg", "png", "webp", "gif"]:
-                    download_url = info["url"]
-                    media_type = "photo"
-                    ext = url_ext
-            
-            # Check formats if no direct URL
-            if not download_url and "formats" in info:
-                print(f"Checking formats...")
-                # First look for best quality image
-                best_image = None
-                best_image_quality = 0
-                best_video = None
-                
-                for fmt in info["formats"]:
-                    fmt_ext = fmt.get("ext", "").lower()
-                    
-                    # Check for images
-                    if fmt_ext in ["jpg", "jpeg", "png", "webp"]:
-                        quality = fmt.get("height", 0) or fmt.get("quality", 0)
-                        if quality > best_image_quality:
-                            best_image = fmt.get("url", "")
-                            best_image_quality = quality
-                            ext = fmt_ext
-                    
-                    # Check for videos
-                    elif fmt_ext in ["mp4"] and fmt.get("vcodec") != "none":
-                        if not best_video:
-                            best_video = fmt.get("url", "")
-                
-                if best_image:
-                    download_url = best_image
-                    media_type = "photo"
-                    print(f"Found image in formats, quality: {best_image_quality}")
-                elif best_video:
-                    download_url = best_video
-                    media_type = "video"
-                    ext = "mp4"
-                    print(f"Found video in formats")
-            
-            # If still no URL, try thumbnail or display_url
+            # If no entries, check direct URL
             if not download_url:
-                if info.get("display_url"):
-                    download_url = info["display_url"]
+                if info.get("url") and info.get("ext") in ["mp4", "webm"]:
+                    download_url = info["url"]
+                    media_type = "video"
+                    ext = info.get("ext", "mp4")
+                elif info.get("url") and info.get("ext") in ["jpg", "jpeg", "png", "webp"]:
+                    download_url = info["url"]
                     media_type = "photo"
-                    ext = "jpg"
-                    print(f"Using display_url")
+                    ext = info.get("ext", "jpg")
                 elif info.get("thumbnail"):
                     download_url = info["thumbnail"]
                     media_type = "photo"
                     ext = "jpg"
-                    print(f"Using thumbnail as fallback")
+            
+            # Update uploader for stories
+            if not uploader and "uploader_id" in info:
+                uploader = info["uploader_id"]
+            elif not uploader and "channel" in info:
+                uploader = info["channel"]
+                
+            if not title or title == "Instagram Media":
+                title = f"Instagram Story by {uploader}" if uploader else "Instagram Story"
         
-        # If media_type is still unknown but we have a URL, detect from URL
+        # Regular post/reel handling (if not story or story handled)
+        if not download_url:
+            # Check for entries (carousel/sidecar posts)
+            if "entries" in info and info["entries"]:
+                print(f"Carousel post detected with {len(info['entries'])} items")
+                entry = info["entries"][0]
+                
+                if entry.get("url") and entry.get("ext") in ["mp4", "webm"]:
+                    download_url = entry["url"]
+                    media_type = "video"
+                    ext = entry.get("ext", "mp4")
+                elif entry.get("url") and entry.get("ext") in ["jpg", "jpeg", "png", "webp"]:
+                    download_url = entry["url"]
+                    media_type = "photo"
+                    ext = entry.get("ext", "jpg")
+                elif entry.get("thumbnail"):
+                    download_url = entry["thumbnail"]
+                    media_type = "photo"
+                    ext = "jpg"
+                elif "formats" in entry and entry["formats"]:
+                    for fmt in entry["formats"]:
+                        if fmt.get("ext") in ["jpg", "jpeg", "png", "webp"]:
+                            download_url = fmt.get("url", "")
+                            media_type = "photo"
+                            ext = fmt.get("ext", "jpg")
+                            break
+                        elif fmt.get("ext") in ["mp4"]:
+                            download_url = fmt.get("url", "")
+                            media_type = "video"
+                            ext = "mp4"
+                            break
+                
+                if entry.get("thumbnail"):
+                    thumbnail = entry["thumbnail"]
+                    
+            else:
+                # Single post
+                print(f"Single post detected")
+                
+                if info.get("url"):
+                    url_ext = info.get("ext", "").lower()
+                    
+                    if url_ext in ["mp4", "webm", "mov"]:
+                        download_url = info["url"]
+                        media_type = "video"
+                        ext = url_ext
+                    elif url_ext in ["jpg", "jpeg", "png", "webp", "gif"]:
+                        download_url = info["url"]
+                        media_type = "photo"
+                        ext = url_ext
+                
+                if not download_url and "formats" in info:
+                    best_image = None
+                    best_image_quality = 0
+                    best_video = None
+                    
+                    for fmt in info["formats"]:
+                        fmt_ext = fmt.get("ext", "").lower()
+                        
+                        if fmt_ext in ["jpg", "jpeg", "png", "webp"]:
+                            quality = fmt.get("height", 0) or fmt.get("quality", 0)
+                            if quality > best_image_quality:
+                                best_image = fmt.get("url", "")
+                                best_image_quality = quality
+                                ext = fmt_ext
+                        elif fmt_ext in ["mp4"] and fmt.get("vcodec") != "none":
+                            if not best_video:
+                                best_video = fmt.get("url", "")
+                    
+                    if best_image:
+                        download_url = best_image
+                        media_type = "photo"
+                    elif best_video:
+                        download_url = best_video
+                        media_type = "video"
+                        ext = "mp4"
+                
+                if not download_url:
+                    if info.get("display_url"):
+                        download_url = info["display_url"]
+                        media_type = "photo"
+                        ext = "jpg"
+                    elif info.get("thumbnail"):
+                        download_url = info["thumbnail"]
+                        media_type = "photo"
+                        ext = "jpg"
+        
+        # Detect media type from URL if still unknown
         if media_type == "unknown" and download_url:
             url_lower = download_url.lower()
-            if any(ext in url_lower for ext in [".jpg", ".jpeg", ".png", ".webp", "format=jpg", "format=png"]):
+            if any(x in url_lower for x in [".jpg", ".jpeg", ".png", ".webp", "format=jpg", "format=png"]):
                 media_type = "photo"
                 ext = "jpg"
-            elif any(ext in url_lower for ext in [".mp4", ".webm"]):
+            elif any(x in url_lower for x in [".mp4", ".webm"]):
                 media_type = "video"
                 ext = "mp4"
         
@@ -195,27 +232,33 @@ def extract_media_info(url: str) -> dict:
             else:
                 ext = "jpg" if media_type == "photo" else "mp4"
         
-        # Get better thumbnail if available
+        # Get better thumbnail
         if not thumbnail and "thumbnails" in info:
             thumbnails = info.get("thumbnails", [])
             if thumbnails:
                 best_thumb = max(thumbnails, key=lambda x: x.get("preference", 0) or x.get("height", 0))
                 thumbnail = best_thumb.get("url", "")
         
+        # Set media_type to "story" for frontend if it was a story
+        if is_story and media_type in ["photo", "video"]:
+            display_type = "story"
+        else:
+            display_type = media_type
+        
         result = {
             "success": True,
-            "title": title[:200] if title else "Instagram Media",  # Limit title length
+            "title": title[:200] if title else "Instagram Media",
             "thumbnail": thumbnail,
             "download_url": download_url,
-            "media_type": media_type,
-            "duration": info.get("duration"),
+            "media_type": display_type,
+            "duration": duration,
             "uploader": uploader or "",
-            "ext": ext.replace(".", ""),  # Remove dot from extension
+            "ext": ext.replace(".", ""),
+            "is_story": is_story,
         }
         
-        print(f"Final result: media_type={media_type}, ext={ext}, url_preview={download_url[:100] if download_url else 'None'}")
+        print(f"Final result: media_type={display_type}, is_story={is_story}, ext={ext}")
         
-        # Cache the result
         _cache[url] = result
         return result
         
@@ -223,7 +266,7 @@ def extract_media_info(url: str) -> dict:
         print(f"yt-dlp DownloadError: {str(e)}")
         raise e
     except Exception as e:
-        print(f"Unexpected error in extract_media_info: {str(e)}")
+        print(f"Unexpected error: {str(e)}")
         raise e
 
 # API Endpoint: POST /download
@@ -242,18 +285,17 @@ def download():
     if not is_instagram_url(url):
         return jsonify({
             "success": False,
-            "error": "Invalid Instagram URL"
+            "error": "Invalid Instagram URL. Please paste a valid reel, post, or story link."
         }), 422
     
     try:
         time.sleep(0.3)
         result = extract_media_info(url)
         
-        # Validate result has required fields
         if not result.get("download_url"):
             return jsonify({
                 "success": False,
-                "error": "Could not extract media URL. The post might be private or deleted."
+                "error": "Could not extract media. The content might be private, expired, or deleted."
             }), 404
             
         return jsonify(result), 200
@@ -270,7 +312,12 @@ def download():
         elif "not found" in error_msg.lower() or "deleted" in error_msg.lower():
             return jsonify({
                 "success": False,
-                "error": "Post not found or has been deleted."
+                "error": "Content not found or has been deleted."
+            }), 404
+        elif "story" in error_msg.lower() and "expired" in error_msg.lower():
+            return jsonify({
+                "success": False,
+                "error": "Story has expired. Stories are only available for 24 hours."
             }), 404
         else:
             return jsonify({
@@ -286,28 +333,26 @@ def download():
             "error": f"Error: {error_msg[:150]}"
         }), 500
 
-# Health check
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "ok", 
-        "message": "Server running",
         "cache_size": len(_cache)
     }), 200
 
-# Root route
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
         "message": "Instagram Downloader API",
-        "version": "2.0",
+        "version": "3.0",
+        "supports": ["reels", "posts", "photos", "carousel", "stories"],
         "endpoints": {
-            "POST /download": "Extract media info (supports photos and videos)",
+            "POST /download": "Extract media info",
             "GET /health": "Health check"
         }
     }), 200
 
-# Keep-alive for Render
+# Keep-alive using urllib (no requests needed)
 import threading
 import urllib.request
 
@@ -315,15 +360,13 @@ def keep_alive():
     while True:
         time.sleep(840)  # 14 minutes
         try:
-            urllib.request.urlopen("https://instagram-downloader-t0pq.onrender.com/health")
+            urllib.request.urlopen("https://instagram-downloader-t0pq.onrender.com/health", timeout=10)
             print("Keep-alive ping sent")
         except Exception as e:
             print(f"Keep-alive failed: {e}")
 
-# Start keep-alive thread
 threading.Thread(target=keep_alive, daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"Starting server on port {port}")
     app.run(debug=False, host="0.0.0.0", port=port)

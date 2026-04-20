@@ -130,11 +130,11 @@ def extract_media_info(url: str) -> dict:
             "title": title,
             "thumbnail": thumbnail,
             "download_url": download_url,
-            "media_type": media_type,
+            "media_type": media_type,  # Must be "photo" or "video"
             "duration": info.get("duration"),
             "uploader": uploader,
-            "ext": download_url.split(".")[-1].split("?")[0] if download_url else "",
-        }
+            "ext": download_url.split(".")[-1].split("?")[0] if download_url else "",  # jpg, mp4, etc.
+}
         
         _cache[url] = result
         return result

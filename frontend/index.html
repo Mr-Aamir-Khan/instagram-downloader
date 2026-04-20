@@ -171,8 +171,18 @@
     }
     .theme-btn:hover { border-color: var(--border-h); color: var(--text); }
 
-    /* PAGES */
-    .page { display: none; }
+    /* PAGES - Scroll Snap */
+    .pages-container {
+      scroll-snap-type: y mandatory;
+      overflow-y: auto;
+      height: calc(100vh - var(--nav-h));
+    }
+    .page {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      min-height: calc(100vh - var(--nav-h));
+      display: none;
+    }
     .page.active { display: block; }
 
     /* WRAPPER */
@@ -310,12 +320,6 @@
       background: linear-gradient(135deg, var(--surface2), var(--surface3));
     }
     .thumb-placeholder svg { opacity: 0.18; }
-    .play-overlay {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.22); opacity: 0; transition: opacity var(--t); cursor: pointer;
-    }
-    .thumb-wrap:hover .play-overlay { opacity: 1; }
 
     .content-badge {
       position: absolute; top: 10px; left: 10px;
@@ -516,9 +520,9 @@
   <div class="nav-inner">
     <span class="nav-logo" onclick="goToHome()">InstaGet</span>
 
-    <!-- Only FAQ link in navbar -->
+    <!-- Only FAQ link in navbar (without book emoji and without "Guide") -->
     <div class="nav-links">
-      <button class="nav-link" onclick="goToFAQ()" id="nav-faq">📖 FAQ / Guide</button>
+      <button class="nav-link" onclick="goToFAQ()" id="nav-faq">FAQ</button>
     </div>
 
     <!-- Right: Language + Theme -->
@@ -569,7 +573,7 @@
     <!-- FAQ quick link -->
     <div class="faq-link">
       <a href="#" onclick="goToFAQ(); return false;">
-        <span>📖 Need help? Check our FAQ guide</span>
+        <span>Need help? Check our FAQ</span>
         <span>→</span>
       </a>
     </div>
@@ -594,7 +598,7 @@
       </div>
 
       <div class="media-area" id="photoWrap" style="display:none;">
-        <img id="photoDisplay" class="photo-display" alt="Instagram Photo" />
+        <img id="photoDisplay" class="photo-display" alt="Instagram Photo" crossorigin="anonymous" />
         <span class="content-badge">📷 PHOTO</span>
       </div>
 
@@ -641,7 +645,6 @@
       <h2>Best Free Instagram Video Downloader Online</h2>
       <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
       <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download — your file is ready in HD quality.</p>
-      <p>Looking for an Instagram Reel downloader? InstaGet fully supports Reels, Stories and Photos — downloading them in the original HD quality. Works on all devices — Android, iPhone, Windows, and Mac.</p>
     </div>
 
   </div>
@@ -652,12 +655,12 @@
   <div class="wrapper">
 
     <div class="faq-hero">
-      <h1 id="faqPageTitle">📖 Guide & FAQ</h1>
+      <h1 id="faqPageTitle">FAQ</h1>
       <p id="faqPageSub">Everything you need to know about InstaGet</p>
     </div>
 
     <!-- Guide Section -->
-    <div class="guide-section">
+    <div class="guide-section" id="faqContent">
 
       <!-- ENGLISH -->
       <div class="lang-content active" id="guide-en">
@@ -718,10 +721,6 @@
           <div class="faq-item">
             <button class="faq-q">Why is my download not working? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">Ensure the link is correct and the account is public. Try copying the link again from the Instagram app and paste it fresh.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">Is downloading Instagram content legal? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">Downloading for personal offline viewing is generally acceptable. Redistribution or commercial use without the creator's permission is not allowed.</div>
           </div>
         </div>
         <div class="note-box">
@@ -826,7 +825,7 @@
       errEmpty:"Please paste an Instagram URL first.",
       errInvalid:"That doesn't look like an Instagram link.",
       errServer:"Cannot reach server. Check: "+API_BASE,
-      faqTitle:"📖 Guide & FAQ", faqSub:"Everything you need to know about InstaGet",
+      faqTitle:"FAQ", faqSub:"Everything you need to know about InstaGet",
     },
     hi: {
       inputLabel:"इंस्टाग्राम लिंक पेस्ट करें", dlBtn:"⬇ फेच करें", clearBtn:"हटाएं",
@@ -836,7 +835,7 @@
       errEmpty:"पहले Instagram URL पेस्ट करें।",
       errInvalid:"यह Instagram लिंक नहीं लग रहा।",
       errServer:"Server से connect नहीं हो पा रहा। Check करें: "+API_BASE,
-      faqTitle:"📖 गाइड और FAQ", faqSub:"InstaGet के बारे में सब कुछ जानें",
+      faqTitle:"FAQ", faqSub:"InstaGet के बारे में सब कुछ जानें",
     }
   };
 
@@ -875,30 +874,75 @@
     btn.addEventListener("click", () => applyLang(btn.dataset.lang));
   });
 
-  /* ── Page routing ── */
+  /* ── Page routing with scroll support ── */
   function goToHome() {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.getElementById("page-home").classList.add("active");
     document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Update URL hash without scrolling
+    history.replaceState(null, null, '#home');
   }
 
   function goToFAQ() {
-    const faqPage = document.getElementById("page-faq");
-    const homePage = document.getElementById("page-home");
-    
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    faqPage.classList.add("active");
-    
+    document.getElementById("page-faq").classList.add("active");
     document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
     document.getElementById("nav-faq").classList.add("active");
+    document.getElementById("faqContent").scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.replaceState(null, null, '#faq');
+  }
+
+  // Handle scroll to show FAQ when scrolling down
+  let lastScrollTop = 0;
+  let isScrolling = false;
+  
+  window.addEventListener('scroll', () => {
+    if (isScrolling) return;
     
-    setTimeout(() => {
-      document.querySelector('.guide-section').scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
-    }, 100);
+    const homePage = document.getElementById('page-home');
+    const faqPage = document.getElementById('page-faq');
+    const scrollPosition = window.scrollY;
+    const windowHeight = window.innerHeight;
+    const homeHeight = homePage.offsetHeight;
+    
+    // If scrolled past home page, show FAQ
+    if (scrollPosition > homeHeight - 100 && homePage.classList.contains('active')) {
+      isScrolling = true;
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      faqPage.classList.add("active");
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+      document.getElementById("nav-faq").classList.add("active");
+      history.replaceState(null, null, '#faq');
+      setTimeout(() => { isScrolling = false; }, 100);
+    }
+    
+    // If scrolled back to top, show Home
+    if (scrollPosition < 100 && faqPage.classList.contains('active')) {
+      isScrolling = true;
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      homePage.classList.add("active");
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+      history.replaceState(null, null, '#home');
+      setTimeout(() => { isScrolling = false; }, 100);
+    }
+    
+    lastScrollTop = scrollPosition;
+  });
+
+  // Handle hash changes for direct navigation
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash;
+    if (hash === '#faq') {
+      goToFAQ();
+    } else if (hash === '#home' || !hash) {
+      goToHome();
+    }
+  });
+
+  // Check initial hash
+  if (window.location.hash === '#faq') {
+    setTimeout(goToFAQ, 100);
   }
 
   /* ── Theme ── */
@@ -946,15 +990,16 @@
 
   function hideResult() {
     document.getElementById("resultCard").classList.remove("visible");
-    document.getElementById("videoPlayer").pause();
-    document.getElementById("videoPlayer").src = "";
+    const videoPlayer = document.getElementById("videoPlayer");
+    videoPlayer.pause();
+    videoPlayer.src = "";
     document.getElementById("videoWrap").style.display  = "none";
     document.getElementById("photoWrap").style.display  = "none";
     document.getElementById("thumbWrap").style.display  = "block";
     document.getElementById("thumbPlaceholder").style.display = "flex";
   }
 
-  /* ── Show Result with Photo Support ── */
+  /* ── Show Result with improved Photo Support ── */
   function showResult(data) {
     const card       = document.getElementById("resultCard");
     const videoWrap  = document.getElementById("videoWrap");
@@ -976,17 +1021,21 @@
     videoPlayer.src = "";
     photoDisp.src = "";
     
-    const mediaType = data.media_type || "";
+    const mediaType = (data.media_type || "").toLowerCase();
     const downloadUrl = data.download_url || "";
     
-    // Check if photo
-    const isPhoto = mediaType === "photo" || 
-                    mediaType === "image" || 
-                    /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(downloadUrl);
+    // Better photo detection
+    const isPhoto = mediaType.includes("photo") || 
+                    mediaType.includes("image") || 
+                    /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(downloadUrl) ||
+                    data.ext === "jpg" || data.ext === "jpeg" || data.ext === "png";
     
-    // Check if video
-    const isVideo = mediaType === "video" || 
-                    /\.(mp4|webm|mov|m4v)(\?|$)/i.test(downloadUrl);
+    // Better video detection
+    const isVideo = mediaType.includes("video") || 
+                    /\.(mp4|webm|mov|m4v)(\?|$)/i.test(downloadUrl) ||
+                    data.ext === "mp4";
+
+    console.log("Media type:", mediaType, "isPhoto:", isPhoto, "isVideo:", isVideo, "URL:", downloadUrl);
 
     if (isPhoto && downloadUrl) {
         photoDisp.src = downloadUrl;
@@ -994,13 +1043,21 @@
         dl.download = `instaget_photo.${data.ext || 'jpg'}`;
         dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
         
-        photoDisp.onerror = () => {
-            if (data.thumbnail) {
+        photoDisp.onerror = function() {
+            console.log("Photo failed to load, trying fallback...");
+            if (data.thumbnail && data.thumbnail !== downloadUrl) {
                 photoDisp.src = data.thumbnail;
             } else {
+                photoWrap.style.display = "none";
                 showThumbnail(data);
             }
         };
+        
+        // Also set thumbnail as backup
+        if (data.thumbnail) {
+            const img = new Image();
+            img.src = data.thumbnail;
+        }
         
     } else if (isVideo && downloadUrl) {
         videoPlayer.src = downloadUrl;
@@ -1009,11 +1066,18 @@
         dl.download = "instaget_video.mp4";
         dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
         
-        videoPlayer.onerror = () => {
+        videoPlayer.onerror = function() {
+            console.log("Video failed to load, falling back to thumbnail");
             videoWrap.style.display = "none";
             showThumbnail(data);
         };
+        
+        // Load poster if available
+        if (data.thumbnail) {
+            videoPlayer.poster = data.thumbnail;
+        }
     } else {
+        // Fallback to thumbnail
         showThumbnail(data);
     }
 
@@ -1037,6 +1101,12 @@
       thumbWrap.insertBefore(img, thumbWrap.firstChild);
     } else {
       placeholder.style.display = "flex";
+    }
+    
+    // Update download button
+    const dl = document.getElementById("downloadLink");
+    if (data.download_url) {
+      dl.href = data.download_url;
     }
   }
 

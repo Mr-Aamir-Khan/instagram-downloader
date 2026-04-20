@@ -26,10 +26,6 @@ def is_instagram_url(url: str) -> bool:
 
 
 def extract_video_info(url: str) -> dict:
-    """
-    Use yt-dlp to extract video metadata without downloading.
-    Returns a dict with title, thumbnail, and best-quality video URL.
-    """
     if url in _cache:
         return _cache[url]
 
@@ -38,42 +34,66 @@ def extract_video_info(url: str) -> dict:
         "no_warnings": True,
         "skip_download": True,
         "format": "best",
-        # ✅ Updated extractor args for newer yt-dlp versions
         "extractor_args": {
-            "instagram": {
-                "include_ads": False,
-            }
+            "instagram": {"include_ads": False}
         },
-        # ✅ Fake browser headers to avoid Instagram blocks
         "http_headers": {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "en-US,en;q=0.9",
+            "User-Agent": "Mozilla/5.0",
         },
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
-    video_url = info.get("url") or ""
-    if not video_url and info.get("formats"):
-        video_url = info["formats"][-1].get("url", "")
+    download_url = ""
+    media_type = "video"
+
+    # ✅ 1. Carousel (multiple posts)
+    if "entries" in info and info["entries"]:
+        entry = info["entries"][0]
+
+        # 🎥 video
+        if entry.get("url") and entry.get("ext") == "mp4":
+            download_url = entry["url"]
+            media_type = "video"
+
+        # 📸 image (IMPORTANT)
+        elif entry.get("display_url"):
+            download_url = entry["display_url"]
+            media_type = "image"
+
+        elif entry.get("thumbnail"):
+            download_url = entry["thumbnail"]
+            media_type = "image"
+
+    # ✅ 2. Single post
+    else:
+        # 🎥 video
+        if info.get("url") and info.get("ext") == "mp4":
+            download_url = info["url"]
+            media_type = "video"
+
+        # 📸 image
+        elif info.get("display_url"):
+            download_url = info["display_url"]
+            media_type = "image"
+
+        elif info.get("thumbnail"):
+            download_url = info["thumbnail"]
+            media_type = "image"
 
     result = {
         "success": True,
-        "title": info.get("title") or "Instagram Video",
+        "title": info.get("title") or "Instagram Media",
         "thumbnail": info.get("thumbnail") or "",
-        "download_url": video_url,
+        "download_url": download_url,
+        "media_type": media_type,
         "duration": info.get("duration"),
         "uploader": info.get("uploader") or "",
     }
 
     _cache[url] = result
     return result
-
 
 # ─────────────────────────────────────────────
 # API Endpoint: POST /download
@@ -139,7 +159,18 @@ def index():
         }
     }), 200
 
+import threading
+import urllib.request
 
+def keep_alive():
+    while True:
+        time.sleep(840)  # 14 minutes
+        try:
+            urllib.request.urlopen("https://instagram-downloader-t0pq.onrender.com/health")
+        except:
+            pass
+
+threading.Thread(target=keep_alive, daemon=True).start()
 # ✅ FIXED: Single main block, port pehle define karo
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

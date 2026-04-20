@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="7mQvFo3G7OSFg_VJJhuN14WGs8UWi5xTg6UabGykig4" />
   <title>InstaGet — Free Instagram Reels, Videos, Photos & Stories Downloader</title>
-  <meta name="description" content="InstaGet is the fastest free Instagram downloader. Download Reels, Videos, Photos and Stories in HD quality. No login required. Works on Android, iPhone, Windows & Mac." />
-  <meta name="keywords" content="instagram downloader, download instagram reels, instagram video downloader, instagram photo downloader, instagram story downloader, reels downloader, save instagram video, free instagram downloader, download reel without watermark, instagram reel download online" />
+  <meta name="description" content="InstaGet is the fastest free Instagram downloader. Download Reels, Videos, Photos and Stories in HD quality. No login required." />
+  <meta name="keywords" content="instagram downloader, download instagram reels, instagram video downloader, instagram photo downloader, reels downloader, save instagram video" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://instagram-downloader-ebon.vercel.app/" />
   <meta property="og:title" content="InstaGet — Free Instagram Reels, Videos & Photos Downloader" />
-  <meta property="og:description" content="Download Instagram Reels, Videos, Photos and Stories free in HD. No login required." />
+  <meta property="og:description" content="Download Instagram Reels, Videos, Photos and Stories free in HD." />
   <meta property="og:url" content="https://instagram-downloader-ebon.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -66,7 +66,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── BG ── */
+    /* BG */
     .bg-mesh {
       position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
     }
@@ -87,9 +87,7 @@
     @keyframes drift1 { from{transform:translate(0,0) scale(1)} to{transform:translate(80px,60px) scale(1.1)} }
     @keyframes drift2 { from{transform:translate(0,0) scale(1)} to{transform:translate(-60px,-80px) scale(1.15)} }
 
-    /* ════════════════════════════════
-       NAVBAR
-    ════════════════════════════════ */
+    /* NAVBAR */
     .navbar {
       position: sticky; top: 0; z-index: 100;
       width: 100%;
@@ -122,7 +120,7 @@
       cursor: pointer;
     }
 
-    /* Nav links (desktop) */
+    /* Nav links */
     .nav-links {
       display: flex; align-items: center; gap: 6px;
       flex: 1; justify-content: center;
@@ -173,18 +171,11 @@
     }
     .theme-btn:hover { border-color: var(--border-h); color: var(--text); }
 
-    /* Mobile hamburger (hidden on desktop) */
-    .nav-hamburger { display: none; }
-
-    /* ════════════════════════════════
-       PAGES (single-page routing)
-    ════════════════════════════════ */
+    /* PAGES */
     .page { display: none; }
     .page.active { display: block; }
 
-    /* ════════════════════════════════
-       MAIN CONTENT WRAPPER
-    ════════════════════════════════ */
+    /* WRAPPER */
     .wrapper {
       position: relative; z-index: 1;
       max-width: 700px; width: 100%;
@@ -193,7 +184,7 @@
       display: flex; flex-direction: column; gap: 24px;
     }
 
-    /* ── HERO TEXT ── */
+    /* HERO */
     .hero-text { text-align: center; padding: 8px 0 4px; }
     .hero-text h1 {
       font-family: 'Syne', sans-serif;
@@ -207,7 +198,7 @@
     }
     .hero-text p { font-size: 13.5px; color: var(--text-muted); line-height: 1.7; max-width: 480px; margin: 0 auto; }
 
-    /* ── CARD ── */
+    /* CARD */
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 22px; padding: 26px 26px 22px;
@@ -215,7 +206,7 @@
     }
     .card:hover { border-color: var(--border-h); }
 
-    /* ── INPUT ── */
+    /* INPUT */
     .input-label {
       font-size: 10px; font-weight: 700;
       letter-spacing: 1.5px; text-transform: uppercase;
@@ -258,8 +249,17 @@
       margin-top: 10px; font-size: 11.5px; color: var(--text-muted);
       display: flex; align-items: center; gap: 6px; line-height: 1.4;
     }
+    .faq-link {
+      text-align: center; margin-top: -10px;
+    }
+    .faq-link a {
+      color: var(--accent); text-decoration: none; font-size: 13px;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: all var(--t);
+    }
+    .faq-link a:hover { color: var(--accent2); gap: 8px; }
 
-    /* ── LOADER ── */
+    /* LOADER */
     .loader-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0; }
     .loader-wrap.visible { display: flex; }
     .spinner-ring { width: 46px; height: 46px; position: relative; }
@@ -273,7 +273,7 @@
     .loader-text { font-size: 13px; color: var(--text-muted); animation: pulse 1.6s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
-    /* ── ERROR ── */
+    /* ERROR */
     .error-box {
       display: none; align-items: flex-start; gap: 10px;
       background: var(--error-glow); border: 1px solid rgba(255,71,87,0.28);
@@ -283,7 +283,7 @@
     }
     .error-box.visible { display: flex; }
 
-    /* ── RESULT CARD ── */
+    /* RESULT CARD */
     .result-card {
       display: none; flex-direction: column;
       border-radius: 18px; overflow: hidden;
@@ -293,13 +293,11 @@
     .result-card.visible { display: flex; }
     @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-    /* Media area */
     .media-area { background: #000; position: relative; }
     .media-area video {
       width: 100%; max-height: 380px;
       display: block; object-fit: contain; background: #000;
     }
-    /* ✅ Photo display */
     .media-area .photo-display {
       width: 100%; max-height: 420px;
       display: block; object-fit: contain; background: var(--surface2);
@@ -319,7 +317,6 @@
     }
     .thumb-wrap:hover .play-overlay { opacity: 1; }
 
-    /* Content badge */
     .content-badge {
       position: absolute; top: 10px; left: 10px;
       background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
@@ -351,7 +348,7 @@
     }
     .btn-download:hover { transform: translateY(-1px); box-shadow: 0 8px 22px var(--accent-glow); }
 
-    /* ── HOW IT WORKS ── */
+    /* HOW IT WORKS */
     .how-it-works { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
     .how-step {
       background: var(--surface); border: 1px solid var(--border);
@@ -368,9 +365,7 @@
     }
     .how-label { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
 
-    /* ════════════════════════════════
-       FAQ PAGE
-    ════════════════════════════════ */
+    /* FAQ PAGE */
     .faq-hero {
       text-align: center; padding: 12px 0 24px;
     }
@@ -470,11 +465,11 @@
     }
     .faq-item.open .faq-a { max-height: 220px; padding: 0 16px 14px; }
 
-    /* ── Language content toggle ── */
+    /* Language content toggle */
     .lang-content { display: none; }
     .lang-content.active { display: block; }
 
-    /* ── SEO section ── */
+    /* SEO section */
     .seo-block {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 22px; padding: 26px;
@@ -487,7 +482,7 @@
     .seo-block p { font-size: 13px; color: var(--text-sub); line-height: 1.8; margin-bottom: 10px; }
     .seo-block p:last-child { margin-bottom: 0; }
 
-    /* ── FOOTER ── */
+    /* FOOTER */
     footer {
       font-size: 12px; color: var(--text-muted); text-align: center;
       padding: 0 24px 36px; position: relative; z-index: 1; line-height: 1.7;
@@ -495,9 +490,8 @@
     footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
 
-    /* ── RESPONSIVE ── */
+    /* RESPONSIVE */
     @media (max-width: 580px) {
-      .nav-links { display: none; }
       .wrapper { padding: 32px 16px 72px; }
       .card { padding: 18px 16px; }
       .guide-section { padding: 20px 16px; }
@@ -517,18 +511,14 @@
 
 <div class="bg-mesh" aria-hidden="true"></div>
 
-<!-- ════════════════════════════
-     NAVBAR
-════════════════════════════ -->
+<!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-inner">
-    <!-- Logo -->
-    <span class="nav-logo" onclick="showPage('home')">InstaGet</span>
+    <span class="nav-logo" onclick="goToHome()">InstaGet</span>
 
-    <!-- Center links -->
+    <!-- Only FAQ link in navbar -->
     <div class="nav-links">
-      <button class="nav-link active" onclick="showPage('home')" id="nav-home">Downloader</button>
-      <button class="nav-link" onclick="showPage('faq')" id="nav-faq">FAQ / Guide</button>
+      <button class="nav-link" onclick="goToFAQ()" id="nav-faq">📖 FAQ / Guide</button>
     </div>
 
     <!-- Right: Language + Theme -->
@@ -548,9 +538,7 @@
   </div>
 </nav>
 
-<!-- ════════════════════════════
-     PAGE: HOME
-════════════════════════════ -->
+<!-- PAGE: HOME -->
 <div class="page active" id="page-home">
   <div class="wrapper">
 
@@ -578,6 +566,14 @@
       </p>
     </div>
 
+    <!-- FAQ quick link -->
+    <div class="faq-link">
+      <a href="#" onclick="goToFAQ(); return false;">
+        <span>📖 Need help? Check our FAQ guide</span>
+        <span>→</span>
+      </a>
+    </div>
+
     <!-- Loader -->
     <div class="loader-wrap" id="loader">
       <div class="spinner-ring"></div>
@@ -592,30 +588,20 @@
 
     <!-- Result -->
     <div class="result-card" id="resultCard">
-
-      <!-- ✅ Video player (shown for video/reel) -->
       <div class="media-area" id="videoWrap" style="display:none;">
         <video id="videoPlayer" controls playsinline preload="metadata"></video>
-        <span class="content-badge" id="videoBadge">VIDEO</span>
+        <span class="content-badge" id="videoBadge">🎬 VIDEO</span>
       </div>
 
-      <!-- ✅ Photo display (shown for photo posts) -->
       <div class="media-area" id="photoWrap" style="display:none;">
         <img id="photoDisplay" class="photo-display" alt="Instagram Photo" />
         <span class="content-badge">📷 PHOTO</span>
       </div>
 
-      <!-- Thumbnail fallback -->
       <div class="thumb-wrap" id="thumbWrap">
         <div class="thumb-placeholder" id="thumbPlaceholder">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
             <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M10 8l6 4-6 4V8z"/>
-          </svg>
-        </div>
-        <div class="play-overlay" id="playOverlay">
-          <svg width="56" height="56" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.45)" stroke="white" stroke-width="1.5"/>
-            <path d="M10 8l6 4-6 4V8z" fill="white"/>
           </svg>
         </div>
       </div>
@@ -661,9 +647,7 @@
   </div>
 </div>
 
-<!-- ════════════════════════════
-     PAGE: FAQ
-════════════════════════════ -->
+<!-- PAGE: FAQ -->
 <div class="page" id="page-faq">
   <div class="wrapper">
 
@@ -675,7 +659,7 @@
     <!-- Guide Section -->
     <div class="guide-section">
 
-      <!-- ── ENGLISH ── -->
+      <!-- ENGLISH -->
       <div class="lang-content active" id="guide-en">
         <div class="features-grid" style="margin-bottom:0;">
           <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD Quality</span></div>
@@ -746,7 +730,7 @@
         </div>
       </div>
 
-      <!-- ── HINDI ── -->
+      <!-- HINDI -->
       <div class="lang-content" id="guide-hi">
         <div class="features-grid" style="margin-bottom:0;">
           <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD क्वालिटी</span></div>
@@ -825,7 +809,7 @@
 
 <script>
   /* ══════════════════════════════
-     CONFIG
+     CONFIG & STATE
   ══════════════════════════════ */
   const API_BASE = "https://instagram-downloader-t0pq.onrender.com";
 
@@ -871,15 +855,15 @@
     document.getElementById("step3Text").textContent   = t.step3;
     document.getElementById("faqPageTitle").textContent= t.faqTitle;
     document.getElementById("faqPageSub").textContent  = t.faqSub;
-    // Hint
+    
     const hint = document.getElementById("hintText");
     const svg  = hint.querySelector("svg").cloneNode(true);
     hint.innerHTML = ""; hint.appendChild(svg);
     hint.appendChild(document.createTextNode(" " + t.hint));
-    // Guide sections
+    
     document.getElementById("guide-en").classList.toggle("active", l === "en");
     document.getElementById("guide-hi").classList.toggle("active", l === "hi");
-    // Lang buttons
+    
     document.querySelectorAll(".lang-btn").forEach(b => {
       b.classList.toggle("active", b.dataset.lang === l);
       b.setAttribute("aria-pressed", b.dataset.lang === l);
@@ -892,13 +876,29 @@
   });
 
   /* ── Page routing ── */
-  function showPage(name) {
+  function goToHome() {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById("page-" + name).classList.add("active");
+    document.getElementById("page-home").classList.add("active");
     document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-    const navBtn = document.getElementById("nav-" + name);
-    if (navBtn) navBtn.classList.add("active");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToFAQ() {
+    const faqPage = document.getElementById("page-faq");
+    const homePage = document.getElementById("page-home");
+    
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    faqPage.classList.add("active");
+    
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+    document.getElementById("nav-faq").classList.add("active");
+    
+    setTimeout(() => {
+      document.querySelector('.guide-section').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }, 100);
   }
 
   /* ── Theme ── */
@@ -944,13 +944,17 @@
   }
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
-  /* ══════════════════════════════
-     ✅ SMART showResult
-     Detects photo vs video from:
-     - data.media_type (if backend provides)
-     - data.ext / filename extension
-     - trying video load; fallback to img
-  ══════════════════════════════ */
+  function hideResult() {
+    document.getElementById("resultCard").classList.remove("visible");
+    document.getElementById("videoPlayer").pause();
+    document.getElementById("videoPlayer").src = "";
+    document.getElementById("videoWrap").style.display  = "none";
+    document.getElementById("photoWrap").style.display  = "none";
+    document.getElementById("thumbWrap").style.display  = "block";
+    document.getElementById("thumbPlaceholder").style.display = "flex";
+  }
+
+  /* ── Show Result with Photo Support ── */
   function showResult(data) {
     const card       = document.getElementById("resultCard");
     const videoWrap  = document.getElementById("videoWrap");
@@ -965,56 +969,52 @@
     const dl = document.getElementById("downloadLink");
     dl.href = data.download_url || "#";
 
-    // ── Detect media type ──
-    const url  = (data.download_url || "").toLowerCase();
-    const ext  = (data.ext || "").toLowerCase();
-    const mtype= (data.media_type || data.type || "").toLowerCase();
-
-    // Photo indicators: extension is jpg/jpeg/png/webp OR media_type says image OR no video ext
-    const isPhoto =
-      mtype.includes("image") || mtype === "photo" ||
-      /\.(jpg|jpeg|png|webp|gif)(\?|$)/.test(url) ||
-      ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp";
-
-    // Video indicators
-    const isVideo =
-      mtype.includes("video") ||
-      /\.(mp4|webm|mov|m4v)(\?|$)/.test(url) ||
-      ext === "mp4" || ext === "webm" || ext === "mov";
-
     // Reset all
     videoWrap.style.display = "none";
     photoWrap.style.display = "none";
     thumbWrap.style.display = "none";
     videoPlayer.src = "";
-    photoDisp.src   = "";
+    photoDisp.src = "";
+    
+    const mediaType = data.media_type || "";
+    const downloadUrl = data.download_url || "";
+    
+    // Check if photo
+    const isPhoto = mediaType === "photo" || 
+                    mediaType === "image" || 
+                    /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(downloadUrl);
+    
+    // Check if video
+    const isVideo = mediaType === "video" || 
+                    /\.(mp4|webm|mov|m4v)(\?|$)/i.test(downloadUrl);
 
-    if (isPhoto) {
-      // Show photo
-      photoDisp.src = data.download_url;
-      photoWrap.style.display = "block";
-      dl.download = "instaget_photo.jpg";
-      dl.textContent = ""; // rebuild with icon
-      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
-    } else if (isVideo || data.download_url) {
-      // Show video player
-      videoPlayer.src = data.download_url;
-      videoWrap.style.display = "block";
-      document.getElementById("videoBadge").textContent = "🎬 VIDEO";
-      dl.download = "instaget_video.mp4";
-      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
-      // If video fails to load, fallback to thumbnail
-      videoPlayer.onerror = () => {
-        videoWrap.style.display = "none";
-        showThumbnail(data);
-      };
+    if (isPhoto && downloadUrl) {
+        photoDisp.src = downloadUrl;
+        photoWrap.style.display = "block";
+        dl.download = `instaget_photo.${data.ext || 'jpg'}`;
+        dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
+        
+        photoDisp.onerror = () => {
+            if (data.thumbnail) {
+                photoDisp.src = data.thumbnail;
+            } else {
+                showThumbnail(data);
+            }
+        };
+        
+    } else if (isVideo && downloadUrl) {
+        videoPlayer.src = downloadUrl;
+        videoWrap.style.display = "block";
+        document.getElementById("videoBadge").textContent = "🎬 VIDEO";
+        dl.download = "instaget_video.mp4";
+        dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
+        
+        videoPlayer.onerror = () => {
+            videoWrap.style.display = "none";
+            showThumbnail(data);
+        };
     } else {
-      showThumbnail(data);
-    }
-
-    // Also try thumbnail in thumb wrap as fallback bg
-    if (data.thumbnail && videoWrap.style.display === "none" && photoWrap.style.display === "none") {
-      showThumbnail(data);
+        showThumbnail(data);
     }
 
     card.classList.add("visible");
@@ -1038,16 +1038,6 @@
     } else {
       placeholder.style.display = "flex";
     }
-  }
-
-  function hideResult() {
-    document.getElementById("resultCard").classList.remove("visible");
-    document.getElementById("videoPlayer").pause();
-    document.getElementById("videoPlayer").src = "";
-    document.getElementById("videoWrap").style.display  = "none";
-    document.getElementById("photoWrap").style.display  = "none";
-    document.getElementById("thumbWrap").style.display  = "block";
-    document.getElementById("thumbPlaceholder").style.display = "flex";
   }
 
   /* ── Fetch ── */

@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <style>
     :root {
@@ -66,7 +66,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── BG ── */
     .bg-mesh {
       position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
     }
@@ -87,16 +86,12 @@
     @keyframes drift1 { from{transform:translate(0,0) scale(1)} to{transform:translate(80px,60px) scale(1.1)} }
     @keyframes drift2 { from{transform:translate(0,0) scale(1)} to{transform:translate(-60px,-80px) scale(1.15)} }
 
-    /* ════════════════════════════════
-       NAVBAR
-    ════════════════════════════════ */
     .navbar {
       position: sticky; top: 0; z-index: 100;
       width: 100%;
       height: var(--nav-h);
-      background: rgba(8,8,15,0.82);
+      background: rgba(8,8,15,0.85);
       backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center;
       transition: background var(--t-slow);
@@ -107,10 +102,9 @@
     .nav-inner {
       max-width: 900px; width: 100%; margin: 0 auto;
       padding: 0 24px;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      display: flex; align-items: center; justify-content: space-between;
     }
 
-    /* Logo */
     .nav-logo {
       font-family: 'Syne', sans-serif;
       font-size: 1.6rem; font-weight: 800;
@@ -122,28 +116,8 @@
       cursor: pointer;
     }
 
-    /* Nav links (desktop) */
-    .nav-links {
-      display: flex; align-items: center; gap: 6px;
-      flex: 1; justify-content: center;
-    }
-    .nav-link {
-      font-size: 13px; font-weight: 500;
-      color: var(--text-muted); text-decoration: none;
-      padding: 6px 14px; border-radius: 50px;
-      transition: all var(--t); cursor: pointer;
-      border: none; background: none;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .nav-link:hover, .nav-link.active {
-      color: var(--text);
-      background: var(--surface2);
-    }
-
-    /* Nav right actions */
     .nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-    /* Language pill */
     .lang-pill {
       display: flex; background: var(--surface2);
       border: 1px solid var(--border); border-radius: 50px;
@@ -162,7 +136,6 @@
     }
     .lang-btn:hover:not(.active) { color: var(--accent); background: rgba(232,54,93,0.08); }
 
-    /* Theme button */
     .theme-btn {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 50px; padding: 7px 13px;
@@ -173,18 +146,6 @@
     }
     .theme-btn:hover { border-color: var(--border-h); color: var(--text); }
 
-    /* Mobile hamburger (hidden on desktop) */
-    .nav-hamburger { display: none; }
-
-    /* ════════════════════════════════
-       PAGES (single-page routing)
-    ════════════════════════════════ */
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* ════════════════════════════════
-       MAIN CONTENT WRAPPER
-    ════════════════════════════════ */
     .wrapper {
       position: relative; z-index: 1;
       max-width: 700px; width: 100%;
@@ -193,7 +154,6 @@
       display: flex; flex-direction: column; gap: 24px;
     }
 
-    /* ── HERO TEXT ── */
     .hero-text { text-align: center; padding: 8px 0 4px; }
     .hero-text h1 {
       font-family: 'Syne', sans-serif;
@@ -207,7 +167,6 @@
     }
     .hero-text p { font-size: 13.5px; color: var(--text-muted); line-height: 1.7; max-width: 480px; margin: 0 auto; }
 
-    /* ── CARD ── */
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 22px; padding: 26px 26px 22px;
@@ -215,7 +174,6 @@
     }
     .card:hover { border-color: var(--border-h); }
 
-    /* ── INPUT ── */
     .input-label {
       font-size: 10px; font-weight: 700;
       letter-spacing: 1.5px; text-transform: uppercase;
@@ -259,7 +217,6 @@
       display: flex; align-items: center; gap: 6px; line-height: 1.4;
     }
 
-    /* ── LOADER ── */
     .loader-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0; }
     .loader-wrap.visible { display: flex; }
     .spinner-ring { width: 46px; height: 46px; position: relative; }
@@ -273,7 +230,6 @@
     .loader-text { font-size: 13px; color: var(--text-muted); animation: pulse 1.6s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
-    /* ── ERROR ── */
     .error-box {
       display: none; align-items: flex-start; gap: 10px;
       background: var(--error-glow); border: 1px solid rgba(255,71,87,0.28);
@@ -283,7 +239,6 @@
     }
     .error-box.visible { display: flex; }
 
-    /* ── RESULT CARD ── */
     .result-card {
       display: none; flex-direction: column;
       border-radius: 18px; overflow: hidden;
@@ -293,17 +248,9 @@
     .result-card.visible { display: flex; }
     @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-    /* Media area */
     .media-area { background: #000; position: relative; }
-    .media-area video {
-      width: 100%; max-height: 380px;
-      display: block; object-fit: contain; background: #000;
-    }
-    /* ✅ Photo display */
-    .media-area .photo-display {
-      width: 100%; max-height: 420px;
-      display: block; object-fit: contain; background: var(--surface2);
-    }
+    .media-area video { width: 100%; max-height: 380px; display: block; object-fit: contain; background: #000; }
+    .media-area .photo-display { width: 100%; max-height: 420px; display: block; object-fit: contain; background: var(--surface2); }
     .thumb-wrap { position: relative; aspect-ratio: 16/9; background: var(--surface2); overflow: hidden; }
     .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .thumb-placeholder {
@@ -311,15 +258,6 @@
       display: flex; align-items: center; justify-content: center;
       background: linear-gradient(135deg, var(--surface2), var(--surface3));
     }
-    .thumb-placeholder svg { opacity: 0.18; }
-    .play-overlay {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.22); opacity: 0; transition: opacity var(--t); cursor: pointer;
-    }
-    .thumb-wrap:hover .play-overlay { opacity: 1; }
-
-    /* Content badge */
     .content-badge {
       position: absolute; top: 10px; left: 10px;
       background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
@@ -327,7 +265,6 @@
       padding: 4px 10px; border-radius: 50px;
       letter-spacing: 0.5px;
     }
-
     .result-info {
       background: var(--surface); padding: 18px 20px 20px;
       display: flex; flex-direction: column; gap: 14px;
@@ -351,15 +288,13 @@
     }
     .btn-download:hover { transform: translateY(-1px); box-shadow: 0 8px 22px var(--accent-glow); }
 
-    /* ── HOW IT WORKS ── */
-    .how-it-works { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .how-it-works { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 12px; }
     .how-step {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 16px; padding: 18px 14px;
       display: flex; flex-direction: column; align-items: center;
-      gap: 10px; text-align: center; transition: border-color var(--t), transform var(--t);
+      gap: 10px; text-align: center;
     }
-    .how-step:hover { border-color: rgba(232,54,93,0.35); transform: translateY(-2px); }
     .how-num {
       width: 34px; height: 34px; border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -368,148 +303,187 @@
     }
     .how-label { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
 
-    /* ════════════════════════════════
-       FAQ PAGE
-    ════════════════════════════════ */
-    .faq-hero {
-      text-align: center; padding: 12px 0 24px;
+    .faq-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      margin-top: 32px;
     }
-    .faq-hero h1 {
-      font-family: 'Syne', sans-serif; font-size: clamp(1.5rem, 4vw, 2.2rem);
-      font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px;
+    .faq-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .faq-hero p { font-size: 13px; color: var(--text-muted); }
-
-    .guide-section {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 22px; padding: 26px;
-      transition: background var(--t-slow);
-    }
-    .guide-sub {
-      font-family: 'Syne', sans-serif; font-size: 14px;
-      font-weight: 700; margin-bottom: 12px; color: var(--text);
+    .faq-sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 28px;
     }
     .features-grid {
-      display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 4px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
     }
     .feature-card {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 11px; padding: 13px 10px;
-      text-align: center; transition: all var(--t);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 8px;
+      text-align: center;
+      transition: all var(--t);
     }
-    .feature-card:hover { border-color: rgba(232,54,93,0.35); transform: translateY(-2px); }
-    .feature-icon { font-size: 20px; display: block; margin-bottom: 5px; }
+    .feature-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .feature-icon { font-size: 24px; display: block; margin-bottom: 6px; }
     .feature-title { font-size: 11px; font-weight: 600; color: var(--text); }
-
     .divider { height: 1px; background: var(--border); margin: 20px 0; }
-
-    .steps-container { display: flex; flex-direction: column; gap: 9px; }
-    .step-item {
-      display: flex; align-items: center; gap: 13px;
-      background: var(--surface2); padding: 11px 14px;
-      border-radius: 11px; border: 1px solid var(--border); transition: all var(--t);
+    .guide-sub {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
     }
-    .step-item:hover { border-color: rgba(232,54,93,0.3); }
+    .steps-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface2);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
     .step-number {
-      width: 30px; height: 30px; border-radius: 50%;
+      width: 30px;
+      height: 30px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 13px; color: #fff; flex-shrink: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      color: #fff;
+      flex-shrink: 0;
     }
     .step-text { font-size: 13px; color: var(--text); line-height: 1.4; }
-
-    .devices-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .devices-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
     .device-badge {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 50px; padding: 5px 12px;
-      font-size: 12px; color: var(--text-sub); transition: all var(--t);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-sub);
     }
-    .device-badge:hover { border-color: var(--accent); color: var(--accent); }
-
     .safety-box {
-      background: var(--success-glow); border: 1px solid rgba(0,214,143,0.22);
-      border-radius: 11px; padding: 13px 15px;
-      display: flex; align-items: center; gap: 11px;
+      background: var(--success-glow);
+      border: 1px solid rgba(0,214,143,0.22);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
     }
-    .safety-icon { font-size: 24px; flex-shrink: 0; }
-    .safety-text { font-size: 12.5px; color: var(--text-sub); line-height: 1.55; }
+    .safety-icon { font-size: 24px; }
+    .safety-text { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
     .safety-text strong { color: var(--success); }
-
     .note-box {
-      background: var(--error-glow); border: 1px solid rgba(255,71,87,0.22);
-      border-radius: 11px; padding: 13px 15px;
-      display: flex; align-items: center; gap: 11px; margin-top: 12px;
+      background: var(--error-glow);
+      border: 1px solid rgba(255,71,87,0.22);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
     }
-    .note-icon { font-size: 18px; flex-shrink: 0; }
-    .note-text { font-size: 12.5px; color: var(--text-sub); line-height: 1.55; }
-    .note-text strong { color: var(--error); }
-
-    /* FAQ accordion */
-    .faq-list { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+    .note-icon { font-size: 18px; }
+    .note-text { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
+    .faq-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
     .faq-item {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 11px; overflow: hidden; transition: border-color var(--t);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
     }
-    .faq-item:hover { border-color: var(--border-h); }
-    .faq-item.open { border-color: rgba(232,54,93,0.3); }
     .faq-q {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 16px; cursor: pointer; font-weight: 600;
-      font-size: 13px; color: var(--text); user-select: none; gap: 10px;
-      background: none; border: none; width: 100%; text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
       font-family: 'DM Sans', sans-serif;
-      transition: background var(--t);
     }
-    .faq-q:hover { background: rgba(232,54,93,0.05); }
-    .faq-arrow { font-size: 14px; color: var(--accent); transition: transform 0.3s; flex-shrink: 0; }
+    .faq-arrow {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
     .faq-item.open .faq-arrow { transform: rotate(180deg); }
     .faq-a {
-      max-height: 0; overflow: hidden; padding: 0 16px;
-      font-size: 13px; color: var(--text-sub); line-height: 1.65;
-      transition: max-height 0.32s ease, padding 0.32s ease;
+      max-height: 0;
+      overflow: hidden;
+      padding: 0 18px;
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.6;
+      transition: max-height 0.3s ease, padding 0.3s ease;
     }
-    .faq-item.open .faq-a { max-height: 220px; padding: 0 16px 14px; }
-
-    /* ── Language content toggle ── */
+    .faq-item.open .faq-a {
+      max-height: 300px;
+      padding: 0 18px 16px 18px;
+    }
     .lang-content { display: none; }
     .lang-content.active { display: block; }
-
-    /* ── SEO section ── */
     .seo-block {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 22px; padding: 26px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 26px;
+      margin-top: 16px;
     }
     .seo-block h2 {
-      font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 12px;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .seo-block p { font-size: 13px; color: var(--text-sub); line-height: 1.8; margin-bottom: 10px; }
-    .seo-block p:last-child { margin-bottom: 0; }
-
-    /* ── FOOTER ── */
+    .seo-block p { font-size: 13px; color: var(--text-sub); line-height: 1.7; margin-bottom: 10px; }
     footer {
-      font-size: 12px; color: var(--text-muted); text-align: center;
-      padding: 0 24px 36px; position: relative; z-index: 1; line-height: 1.7;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
     }
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    /* ── RESPONSIVE ── */
     @media (max-width: 580px) {
-      .nav-links { display: none; }
       .wrapper { padding: 32px 16px 72px; }
-      .card { padding: 18px 16px; }
-      .guide-section { padding: 20px 16px; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .how-it-works { grid-template-columns: 1fr; }
       .input-row { flex-direction: column; }
       .btn-fetch, .btn-clear.show { width: 100%; justify-content: center; }
-      .how-it-works { grid-template-columns: 1fr; }
-      .features-grid { grid-template-columns: repeat(2,1fr); }
-    }
-    @media (max-width: 380px) {
-      .nav-logo { font-size: 1.3rem; }
-      .lang-btn { padding: 4px 9px; font-size: 11px; }
-      .theme-btn { padding: 6px 10px; font-size: 11px; }
+      .faq-section { padding: 20px; }
     }
   </style>
 </head>
@@ -517,27 +491,15 @@
 
 <div class="bg-mesh" aria-hidden="true"></div>
 
-<!-- ════════════════════════════
-     NAVBAR
-════════════════════════════ -->
 <nav class="navbar">
   <div class="nav-inner">
-    <!-- Logo -->
-    <span class="nav-logo" onclick="showPage('home')">InstaGet</span>
-
-    <!-- Center links -->
-    <div class="nav-links">
-      <button class="nav-link active" onclick="showPage('home')" id="nav-home">Downloader</button>
-      <button class="nav-link" onclick="showPage('faq')" id="nav-faq">FAQ / Guide</button>
-    </div>
-
-    <!-- Right: Language + Theme -->
+    <span class="nav-logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">InstaGet</span>
     <div class="nav-actions">
-      <div class="lang-pill" role="group" aria-label="Language">
+      <div class="lang-pill">
         <button class="lang-btn active" data-lang="en">🇬🇧 EN</button>
         <button class="lang-btn" data-lang="hi">🇮🇳 HI</button>
       </div>
-      <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">
+      <button class="theme-btn" id="themeToggle">
         <svg id="themeIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <circle cx="12" cy="12" r="5"/>
           <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
@@ -548,312 +510,240 @@
   </div>
 </nav>
 
-<!-- ════════════════════════════
-     PAGE: HOME
-════════════════════════════ -->
-<div class="page active" id="page-home">
-  <div class="wrapper">
+<div class="wrapper">
 
-    <div class="hero-text">
-      <h1>Download Instagram <span>Reels, Photos</span> & Videos</h1>
-      <p>Paste any public Instagram link — Reels, Posts, Photos or Stories. Get HD quality instantly, no login needed.</p>
-    </div>
-
-    <!-- Input Card -->
-    <div class="card">
-      <label class="input-label" for="urlInput" id="inputLabel">Paste Instagram Link</label>
-      <div class="input-row">
-        <input id="urlInput" class="url-input" type="url"
-          placeholder="https://www.instagram.com/reel/..."
-          autocomplete="off" spellcheck="false" />
-        <button class="btn-fetch" id="fetchBtn"><span id="fetchBtnText">⬇ Fetch</span></button>
-        <button class="btn-clear" id="clearBtn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          <span id="clearBtnText">Clear</span>
-        </button>
-      </div>
-      <p class="hint" id="hintText">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.
-      </p>
-    </div>
-
-    <!-- Loader -->
-    <div class="loader-wrap" id="loader">
-      <div class="spinner-ring"></div>
-      <div class="loader-text" id="loaderText">Fetching…</div>
-    </div>
-
-    <!-- Error -->
-    <div class="error-box" id="errorBox">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-      <span id="errorText">Something went wrong.</span>
-    </div>
-
-    <!-- Result -->
-    <div class="result-card" id="resultCard">
-
-      <!-- ✅ Video player (shown for video/reel) -->
-      <div class="media-area" id="videoWrap" style="display:none;">
-        <video id="videoPlayer" controls playsinline preload="metadata"></video>
-        <span class="content-badge" id="videoBadge">VIDEO</span>
-      </div>
-
-      <!-- ✅ Photo display (shown for photo posts) -->
-      <div class="media-area" id="photoWrap" style="display:none;">
-        <img id="photoDisplay" class="photo-display" alt="Instagram Photo" />
-        <span class="content-badge">📷 PHOTO</span>
-      </div>
-
-      <!-- Thumbnail fallback -->
-      <div class="thumb-wrap" id="thumbWrap">
-        <div class="thumb-placeholder" id="thumbPlaceholder">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-            <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M10 8l6 4-6 4V8z"/>
-          </svg>
-        </div>
-        <div class="play-overlay" id="playOverlay">
-          <svg width="56" height="56" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.45)" stroke="white" stroke-width="1.5"/>
-            <path d="M10 8l6 4-6 4V8z" fill="white"/>
-          </svg>
-        </div>
-      </div>
-
-      <div class="result-info">
-        <div>
-          <div class="result-title" id="resultTitle">Title</div>
-          <div class="result-uploader" id="resultUploader"></div>
-        </div>
-        <div class="result-actions">
-          <a class="btn-download" id="downloadLink" href="#" download="instaget_media" target="_blank" rel="noopener noreferrer">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-            <span id="dlLinkText">Download</span>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- How it works -->
-    <div class="how-it-works">
-      <div class="how-step">
-        <div class="how-num">1</div>
-        <div class="how-label" id="step1Text">Copy an Instagram link</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">2</div>
-        <div class="how-label" id="step2Text">Paste above & click Fetch</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">3</div>
-        <div class="how-label" id="step3Text">Download in HD quality</div>
-      </div>
-    </div>
-
-    <!-- SEO Block -->
-    <div class="seo-block">
-      <h2>Best Free Instagram Video Downloader Online</h2>
-      <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
-      <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download — your file is ready in HD quality.</p>
-      <p>Looking for an Instagram Reel downloader? InstaGet fully supports Reels, Stories and Photos — downloading them in the original HD quality. Works on all devices — Android, iPhone, Windows, and Mac.</p>
-    </div>
-
+  <div class="hero-text">
+    <h1>Download Instagram <span>Reels, Photos</span> & Videos</h1>
+    <p>Paste any public Instagram link — Reels, Posts, Photos or Stories. Get HD quality instantly, no login needed.</p>
   </div>
+
+  <div class="card">
+    <label class="input-label" for="urlInput" id="inputLabel">Paste Instagram Link</label>
+    <div class="input-row">
+      <input id="urlInput" class="url-input" type="url" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
+      <button class="btn-fetch" id="fetchBtn"><span id="fetchBtnText">⬇ Fetch</span></button>
+      <button class="btn-clear" id="clearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        <span id="clearBtnText">Clear</span>
+      </button>
+    </div>
+    <p class="hint" id="hintText">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.
+    </p>
+  </div>
+
+  <div class="loader-wrap" id="loader">
+    <div class="spinner-ring"></div>
+    <div class="loader-text" id="loaderText">Fetching…</div>
+  </div>
+
+  <div class="error-box" id="errorBox">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    <span id="errorText">Something went wrong.</span>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="media-area" id="videoWrap" style="display:none;">
+      <video id="videoPlayer" controls playsinline preload="metadata"></video>
+      <span class="content-badge" id="videoBadge">VIDEO</span>
+    </div>
+    <div class="media-area" id="photoWrap" style="display:none;">
+      <img id="photoDisplay" class="photo-display" alt="Instagram Photo" />
+      <span class="content-badge">PHOTO</span>
+    </div>
+    <div class="thumb-wrap" id="thumbWrap">
+      <div class="thumb-placeholder" id="thumbPlaceholder">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M10 8l6 4-6 4V8z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="result-info">
+      <div>
+        <div class="result-title" id="resultTitle">Title</div>
+        <div class="result-uploader" id="resultUploader"></div>
+      </div>
+      <div class="result-actions">
+        <a class="btn-download" id="downloadLink" href="#" download="instaget_media">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          <span id="dlLinkText">Download</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="how-it-works">
+    <div class="how-step"><div class="how-num">1</div><div class="how-label" id="step1Text">Copy an Instagram link</div></div>
+    <div class="how-step"><div class="how-num">2</div><div class="how-label" id="step2Text">Paste above & click Fetch</div></div>
+    <div class="how-step"><div class="how-num">3</div><div class="how-label" id="step3Text">Download in HD quality</div></div>
+  </div>
+
+  <!-- FAQ / GUIDE SECTION -->
+  <div class="faq-section">
+    <div class="faq-title" id="faqMainTitle">📖 How to Use InstaGet</div>
+    <div class="faq-sub" id="faqMainSub">Everything you need to know — Steps, Features & FAQ</div>
+
+    <!-- ENGLISH CONTENT -->
+    <div class="lang-content active" id="guide-en">
+      <div class="features-grid">
+        <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD Quality</span></div>
+        <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">No Login</span></div>
+        <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">All Devices</span></div>
+        <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">Fast</span></div>
+      </div>
+
+      <p class="guide-sub">⬇️ Step-by-Step Guide</p>
+      <div class="steps-container">
+        <div class="step-item"><div class="step-number">1</div><div class="step-text">Open Instagram app or website</div></div>
+        <div class="step-item"><div class="step-number">2</div><div class="step-text">Find the Reel, Post, Photo or Story you want to download</div></div>
+        <div class="step-item"><div class="step-number">3</div><div class="step-text">Tap the three-dot menu (⋯) → Select "Copy Link"</div></div>
+        <div class="step-item"><div class="step-number">4</div><div class="step-text">Go back to InstaGet and paste the link in the input box</div></div>
+        <div class="step-item"><div class="step-number">5</div><div class="step-text">Click the "Fetch" button — wait a few seconds</div></div>
+        <div class="step-item"><div class="step-number">6</div><div class="step-text">Preview your media, then click "Download" to save to your device</div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="guide-sub">✨ Features</p>
+      <div class="steps-container">
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Reels Downloader</strong> — Save any Reel with original audio</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Video Downloader</strong> — Download IGTV and feed videos in HD</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Photo Downloader</strong> — Save high-resolution photos (JPG/PNG)</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Story Downloader</strong> — Download stories before they expire</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Carousel Downloader</strong> — Download multiple images from a single post</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>No Watermark</strong> — Clean downloads without any watermarks</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>100% Free</strong> — No subscriptions, no hidden charges</div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="guide-sub">📱 Supported Devices & Browsers</p>
+      <div class="devices-list">
+        <span class="device-badge">📱 Android</span>
+        <span class="device-badge">🍎 iPhone / iPad</span>
+        <span class="device-badge">💻 Windows</span>
+        <span class="device-badge">🍏 Mac</span>
+        <span class="device-badge">🌐 Chrome</span>
+        <span class="device-badge">🦊 Firefox</span>
+        <span class="device-badge">🧭 Safari</span>
+        <span class="device-badge">🖥️ Edge</span>
+      </div>
+
+      <div class="safety-box">
+        <div class="safety-icon">🔒</div>
+        <div class="safety-text"><strong>100% Safe & Secure</strong><br>We never store your data or URLs. Media is served directly from Instagram's servers.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="guide-sub">❓ Frequently Asked Questions</p>
+      <div class="faq-list">
+        <div class="faq-item"><button class="faq-q">Is InstaGet completely free? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes — 100% free. No hidden charges, no subscription, no account required.</div></div>
+        <div class="faq-item"><button class="faq-q">Can I download Instagram Photos? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes! InstaGet supports Photos, Reels, Videos, Carousel posts and Stories. Photos are downloaded as JPG/PNG in original quality.</div></div>
+        <div class="faq-item"><button class="faq-q">Can I download private Instagram content? <span class="faq-arrow">▼</span></button><div class="faq-a">No. Only content from public accounts can be downloaded. Private account content is not accessible.</div></div>
+        <div class="faq-item"><button class="faq-q">What quality will I get? <span class="faq-arrow">▼</span></button><div class="faq-a">We fetch the highest available quality — up to 1080p HD for videos, and original resolution for photos.</div></div>
+        <div class="faq-item"><button class="faq-q">Do I need to install anything? <span class="faq-arrow">▼</span></button><div class="faq-a">No installation needed. InstaGet works entirely in your browser on any device.</div></div>
+        <div class="faq-item"><button class="faq-q">Why is my download not working? <span class="faq-arrow">▼</span></button><div class="faq-a">Ensure the link is correct and the account is public. Try copying the link again from the Instagram app.</div></div>
+        <div class="faq-item"><button class="faq-q">Does video include audio? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes! All Reels and videos are downloaded with their original audio track.</div></div>
+        <div class="faq-item"><button class="faq-q">How long are stories available? <span class="faq-arrow">▼</span></button><div class="faq-a">Instagram stories expire after 24 hours. Download them before they disappear!</div></div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-icon">⚠️</div>
+        <div class="note-text"><strong>Reminder:</strong> Only download publicly available content. Respect copyright and always credit creators.</div>
+      </div>
+    </div>
+
+    <!-- HINDI CONTENT -->
+    <div class="lang-content" id="guide-hi">
+      <div class="features-grid">
+        <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD क्वालिटी</span></div>
+        <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">बिना लॉगिन</span></div>
+        <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">सभी डिवाइस</span></div>
+        <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">तेज़</span></div>
+      </div>
+
+      <p class="guide-sub">⬇️ चरण-दर-चरण गाइड</p>
+      <div class="steps-container">
+        <div class="step-item"><div class="step-number">1</div><div class="step-text">Instagram ऐप या वेबसाइट खोलें</div></div>
+        <div class="step-item"><div class="step-number">2</div><div class="step-text">जिस Reel, Post, Photo या Story को डाउनलोड करना है उसे ढूंढें</div></div>
+        <div class="step-item"><div class="step-number">3</div><div class="step-text">तीन-बिंदु मेनू (⋯) टैप करें → "Copy Link" चुनें</div></div>
+        <div class="step-item"><div class="step-number">4</div><div class="step-text">InstaGet पर वापस आएं और लिंक पेस्ट करें</div></div>
+        <div class="step-item"><div class="step-number">5</div><div class="step-text">"Fetch" बटन क्लिक करें — कुछ सेकंड प्रतीक्षा करें</div></div>
+        <div class="step-item"><div class="step-number">6</div><div class="step-text">प्रीव्यू देखें, फिर "Download" क्लिक करें</div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="guide-sub">✨ विशेषताएं</p>
+      <div class="steps-container">
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Reels डाउनलोडर</strong> — ऑडियो के साथ रील्स सेव करें</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Video डाउनलोडर</strong> — HD में वीडियो डाउनलोड करें</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Photo डाउनलोडर</strong> — हाई-रेजोल्यूशन फोटो सेव करें</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Story डाउनलोडर</strong> — स्टोरीज़ डाउनलोड करें</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>बिना वॉटरमार्क</strong> — साफ डाउनलोड</div></div>
+        <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>100% मुफ्त</strong> — कोई शुल्क नहीं</div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="guide-sub">📱 सपोर्टेड डिवाइस और ब्राउज़र</p>
+      <div class="devices-list">
+        <span class="device-badge">📱 एंड्रॉइड</span>
+        <span class="device-badge">🍎 आईफोन/आईपैड</span>
+        <span class="device-badge">💻 विंडोज</span>
+        <span class="device-badge">🍏 मैक</span>
+        <span class="device-badge">🌐 क्रोम</span>
+        <span class="device-badge">🦊 फ़ायरफ़ॉक्स</span>
+        <span class="device-badge">🧭 सफारी</span>
+      </div>
+
+      <div class="safety-box">
+        <div class="safety-icon">🔒</div>
+        <div class="safety-text"><strong>100% सुरक्षित</strong><br>हम आपका डेटा कभी स्टोर नहीं करते।</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="guide-sub">❓ अक्सर पूछे जाने वाले सवाल</p>
+      <div class="faq-list">
+        <div class="faq-item"><button class="faq-q">क्या InstaGet पूरी तरह मुफ्त है? <span class="faq-arrow">▼</span></button><div class="faq-a">हाँ — 100% मुफ्त। कोई छुपा शुल्क नहीं।</div></div>
+        <div class="faq-item"><button class="faq-q">क्या Photos डाउनलोड हो सकती हैं? <span class="faq-arrow">▼</span></button><div class="faq-a">हाँ! InstaGet Photos, Reels, Videos, Carousel और Stories सब सपोर्ट करता है।</div></div>
+        <div class="faq-item"><button class="faq-q">क्या प्राइवेट कंटेंट डाउनलोड होगा? <span class="faq-arrow">▼</span></button><div class="faq-a">नहीं। केवल पब्लिक अकाउंट का कंटेंट डाउनलोड होता है।</div></div>
+        <div class="faq-item"><button class="faq-q">वीडियो में ऑडियो आएगा? <span class="faq-arrow">▼</span></button><div class="faq-a">हाँ! सभी Reels और वीडियो मूल ऑडियो के साथ डाउनलोड होते हैं।</div></div>
+        <div class="faq-item"><button class="faq-q">क्या कोई सॉफ्टवेयर इंस्टॉल करना होगा? <span class="faq-arrow">▼</span></button><div class="faq-a">नहीं। InstaGet पूरी तरह browser में काम करता है।</div></div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-icon">⚠️</div>
+        <div class="note-text"><strong>याद रखें:</strong> केवल पब्लिक कंटेंट डाउनलोड करें। Copyright का सम्मान करें।</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="seo-block">
+    <h2>Best Free Instagram Video Downloader Online</h2>
+    <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
+    <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download — your file is ready in HD quality.</p>
+    <p>Looking for an Instagram Reel downloader? InstaGet fully supports Reels, Stories and Photos — downloading them in the original HD quality. Works on all devices — Android, iPhone, Windows, and Mac.</p>
+  </div>
+
 </div>
 
-<!-- ════════════════════════════
-     PAGE: FAQ
-════════════════════════════ -->
-<div class="page" id="page-faq">
-  <div class="wrapper">
-
-    <div class="faq-hero">
-      <h1 id="faqPageTitle">📖 Guide & FAQ</h1>
-      <p id="faqPageSub">Everything you need to know about InstaGet</p>
-    </div>
-
-    <!-- Guide Section -->
-    <div class="guide-section">
-
-      <!-- ── ENGLISH ── -->
-      <div class="lang-content active" id="guide-en">
-        <div class="features-grid" style="margin-bottom:0;">
-          <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD Quality</span></div>
-          <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">No Login</span></div>
-          <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">All Devices</span></div>
-          <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">Fast</span></div>
-        </div>
-        <div class="divider"></div>
-        <p class="guide-sub">📥 How to Download Instagram Content?</p>
-        <div class="steps-container">
-          <div class="step-item"><div class="step-number">1</div><div class="step-text">Open Instagram and find the Reel, Post, Photo or Story you want</div></div>
-          <div class="step-item"><div class="step-number">2</div><div class="step-text">Tap the three-dot menu (⋯) → Copy Link</div></div>
-          <div class="step-item"><div class="step-number">3</div><div class="step-text">Paste the link in InstaGet's input box</div></div>
-          <div class="step-item"><div class="step-number">4</div><div class="step-text">Click "Fetch", preview, then click "Download" to save</div></div>
-        </div>
-        <div class="divider"></div>
-        <p class="guide-sub">📱 Supported Devices & Browsers</p>
-        <div class="devices-list">
-          <span class="device-badge">📱 Android</span>
-          <span class="device-badge">🍎 iPhone / iPad</span>
-          <span class="device-badge">💻 Windows</span>
-          <span class="device-badge">🍏 Mac</span>
-          <span class="device-badge">🌐 Chrome</span>
-          <span class="device-badge">🦊 Firefox</span>
-          <span class="device-badge">🧭 Safari</span>
-          <span class="device-badge">🖥️ Edge</span>
-        </div>
-        <div class="divider"></div>
-        <div class="safety-box">
-          <div class="safety-icon">🔒</div>
-          <div class="safety-text"><strong>100% Safe & Secure</strong><br>We never store your data or URLs. Media is served directly from Instagram's servers.</div>
-        </div>
-        <div class="divider"></div>
-        <p class="guide-sub">❓ Frequently Asked Questions</p>
-        <div class="faq-list">
-          <div class="faq-item">
-            <button class="faq-q">Is InstaGet completely free? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">Yes — 100% free. No hidden charges, no subscription, no account required.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">Can I download Instagram Photos? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">Yes! InstaGet supports Photos, Reels, Videos, Carousel posts and Stories. Photos are downloaded as JPG/PNG in original quality.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">Can I download private Instagram content? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">No. Only content from public accounts can be downloaded. Private account content is not accessible.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">What quality will I get? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">We fetch the highest available quality — up to 1080p HD for videos, and original resolution for photos.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">Do I need to install anything? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">No installation needed. InstaGet works entirely in your browser on any device.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">Why is my download not working? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">Ensure the link is correct and the account is public. Try copying the link again from the Instagram app and paste it fresh.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">Is downloading Instagram content legal? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">Downloading for personal offline viewing is generally acceptable. Redistribution or commercial use without the creator's permission is not allowed.</div>
-          </div>
-        </div>
-        <div class="note-box">
-          <div class="note-icon">⚠️</div>
-          <div class="note-text"><strong>Reminder:</strong> Only download publicly available content. Respect copyright and always credit creators.</div>
-        </div>
-      </div>
-
-      <!-- ── HINDI ── -->
-      <div class="lang-content" id="guide-hi">
-        <div class="features-grid" style="margin-bottom:0;">
-          <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD क्वालिटी</span></div>
-          <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">बिना लॉगिन</span></div>
-          <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">सभी डिवाइस</span></div>
-          <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">तेज़</span></div>
-        </div>
-        <div class="divider"></div>
-        <p class="guide-sub">📥 इंस्टाग्राम कंटेंट कैसे डाउनलोड करें?</p>
-        <div class="steps-container">
-          <div class="step-item"><div class="step-number">1</div><div class="step-text">इंस्टाग्राम खोलें और जो Reel, Post, Photo या Story चाहिए उसे ढूंढें</div></div>
-          <div class="step-item"><div class="step-number">2</div><div class="step-text">तीन-बिंदु मेनू (⋯) → Link Copy करें</div></div>
-          <div class="step-item"><div class="step-number">3</div><div class="step-text">InstaGet के input box में लिंक पेस्ट करें</div></div>
-          <div class="step-item"><div class="step-number">4</div><div class="step-text">"Fetch" क्लिक करें, preview देखें, फिर "Download" से सेव करें</div></div>
-        </div>
-        <div class="divider"></div>
-        <p class="guide-sub">📱 सपोर्टेड डिवाइस और ब्राउज़र</p>
-        <div class="devices-list">
-          <span class="device-badge">📱 एंड्रॉइड</span>
-          <span class="device-badge">🍎 आईफोन/आईपैड</span>
-          <span class="device-badge">💻 विंडोज</span>
-          <span class="device-badge">🍏 मैक</span>
-          <span class="device-badge">🌐 क्रोम</span>
-          <span class="device-badge">🦊 फ़ायरफ़ॉक्स</span>
-          <span class="device-badge">🧭 सफारी</span>
-          <span class="device-badge">🖥️ Edge</span>
-        </div>
-        <div class="divider"></div>
-        <div class="safety-box">
-          <div class="safety-icon">🔒</div>
-          <div class="safety-text"><strong>100% सुरक्षित</strong><br>हम आपका डेटा या URL कभी स्टोर नहीं करते। Media सीधे इंस्टाग्राम के सर्वर से आती है।</div>
-        </div>
-        <div class="divider"></div>
-        <p class="guide-sub">❓ अक्सर पूछे जाने वाले सवाल</p>
-        <div class="faq-list">
-          <div class="faq-item">
-            <button class="faq-q">क्या InstaGet पूरी तरह मुफ्त है? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">हाँ — 100% मुफ्त। कोई छुपा शुल्क, सब्सक्रिप्शन या अकाउंट की ज़रूरत नहीं।</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">क्या Photos भी डाउनलोड हो सकती हैं? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">हाँ! InstaGet Photos, Reels, Videos, Carousel और Stories — सभी सपोर्ट करता है। Photos ओरिजिनल क्वालिटी में JPG/PNG में मिलती हैं।</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">क्या प्राइवेट कंटेंट डाउनलोड होगा? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">नहीं। केवल पब्लिक अकाउंट का कंटेंट डाउनलोड होता है।</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">वीडियो/फोटो किस क्वालिटी में मिलेगी? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">वीडियो 1080p HD तक और Photos ओरिजिनल resolution में मिलती हैं।</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">क्या कोई सॉफ्टवेयर इंस्टॉल करना होगा? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">नहीं। InstaGet पूरी तरह browser में काम करता है।</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">डाउनलोड क्यों नहीं हो रहा? <span class="faq-arrow">▼</span></button>
-            <div class="faq-a">लिंक सही है और अकाउंट पब्लिक है — यह check करें। इंस्टाग्राम app से दोबारा link copy करके try करें।</div>
-          </div>
-        </div>
-        <div class="note-box">
-          <div class="note-icon">⚠️</div>
-          <div class="note-text"><strong>याद रखें:</strong> केवल पब्लिक कंटेंट डाउनलोड करें। Copyright का सम्मान करें।</div>
-        </div>
-      </div>
-
-    </div><!-- end guide-section -->
-  </div>
-</div>
-
-<!-- FOOTER -->
 <footer>
   InstaGet is not affiliated with Instagram / Meta. Use responsibly and respect creators.
   &nbsp;·&nbsp; <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">Powered by yt-dlp</a>
 </footer>
 
 <script>
-  /* ══════════════════════════════
-     CONFIG
-  ══════════════════════════════ */
   const API_BASE = "https://instagram-downloader-t0pq.onrender.com";
+  const LOADER_EN = ["Fetching media info…", "Waking up server (~30s first load)…", "Extracting URL…", "Almost there…"];
+  const LOADER_HI = ["जानकारी ला रहे हैं…", "Server जगा रहे हैं (~30s)…", "URL निकाल रहे हैं…", "बस थोड़ा और…"];
 
-  const LOADER_EN = ["Fetching media info…","Waking up server (~30s first load)…","Extracting URL…","Almost there…"];
-  const LOADER_HI = ["जानकारी ला रहे हैं…","Server जगा रहे हैं (~30s)…","URL निकाल रहे हैं…","बस थोड़ा और…"];
-
-  /* ── i18n ── */
   const T = {
-    en: {
-      inputLabel:"Paste Instagram Link", dlBtn:"⬇ Fetch", clearBtn:"Clear",
-      hint:"Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.",
-      dlLink:"Download", step1:"Copy an Instagram link",
-      step2:"Paste above & click Fetch", step3:"Download in HD quality",
-      errEmpty:"Please paste an Instagram URL first.",
-      errInvalid:"That doesn't look like an Instagram link.",
-      errServer:"Cannot reach server. Check: "+API_BASE,
-      faqTitle:"📖 Guide & FAQ", faqSub:"Everything you need to know about InstaGet",
-    },
-    hi: {
-      inputLabel:"इंस्टाग्राम लिंक पेस्ट करें", dlBtn:"⬇ फेच करें", clearBtn:"हटाएं",
-      hint:"Reels, Posts, Photos, Stories और IGTV सपोर्ट। अकाउंट पब्लिक होना चाहिए।",
-      dlLink:"डाउनलोड करें", step1:"इंस्टाग्राम लिंक कॉपी करें",
-      step2:"ऊपर पेस्ट करें और Fetch दबाएं", step3:"HD क्वालिटी में डाउनलोड करें",
-      errEmpty:"पहले Instagram URL पेस्ट करें।",
-      errInvalid:"यह Instagram लिंक नहीं लग रहा।",
-      errServer:"Server से connect नहीं हो पा रहा। Check करें: "+API_BASE,
-      faqTitle:"📖 गाइड और FAQ", faqSub:"InstaGet के बारे में सब कुछ जानें",
-    }
+    en: { inputLabel: "Paste Instagram Link", dlBtn: "⬇ Fetch", clearBtn: "Clear", hint: "Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.", dlLink: "Download", step1: "Copy an Instagram link", step2: "Paste above & click Fetch", step3: "Download in HD quality", errEmpty: "Please paste an Instagram URL first.", errInvalid: "That doesn't look like an Instagram link.", errServer: "Cannot reach server. Retry in a moment." },
+    hi: { inputLabel: "इंस्टाग्राम लिंक पेस्ट करें", dlBtn: "⬇ फेच करें", clearBtn: "हटाएं", hint: "Reels, Posts, Photos, Stories और IGTV सपोर्ट। अकाउंट पब्लिक होना चाहिए।", dlLink: "डाउनलोड करें", step1: "इंस्टाग्राम लिंक कॉपी करें", step2: "ऊपर पेस्ट करें और Fetch दबाएं", step3: "HD क्वालिटी में डाउनलोड करें", errEmpty: "पहले Instagram URL पेस्ट करें।", errInvalid: "यह Instagram लिंक नहीं लग रहा।", errServer: "Server से connect नहीं हो पा रहा। पुन: प्रयास करें।" }
   };
 
   let lang = "en";
@@ -862,62 +752,40 @@
   function applyLang(l) {
     lang = l;
     const t = T[l];
-    document.getElementById("inputLabel").textContent  = t.inputLabel;
-    document.getElementById("fetchBtnText").textContent= t.dlBtn;
-    document.getElementById("clearBtnText").textContent= t.clearBtn;
-    document.getElementById("dlLinkText").textContent  = t.dlLink;
-    document.getElementById("step1Text").textContent   = t.step1;
-    document.getElementById("step2Text").textContent   = t.step2;
-    document.getElementById("step3Text").textContent   = t.step3;
-    document.getElementById("faqPageTitle").textContent= t.faqTitle;
-    document.getElementById("faqPageSub").textContent  = t.faqSub;
-    // Hint
+    document.getElementById("inputLabel").innerText = t.inputLabel;
+    document.getElementById("fetchBtnText").innerText = t.dlBtn;
+    document.getElementById("clearBtnText").innerText = t.clearBtn;
+    document.getElementById("dlLinkText").innerText = t.dlLink;
+    document.getElementById("step1Text").innerText = t.step1;
+    document.getElementById("step2Text").innerText = t.step2;
+    document.getElementById("step3Text").innerText = t.step3;
+    document.getElementById("faqMainTitle").innerText = l === "en" ? "📖 How to Use InstaGet" : "📖 InstaGet का उपयोग कैसे करें";
+    document.getElementById("faqMainSub").innerText = l === "en" ? "Everything you need to know — Steps, Features & FAQ" : "आपको जो कुछ भी जानना चाहिए — चरण, विशेषताएं और FAQ";
     const hint = document.getElementById("hintText");
-    const svg  = hint.querySelector("svg").cloneNode(true);
-    hint.innerHTML = ""; hint.appendChild(svg);
+    const svg = hint.querySelector("svg").cloneNode(true);
+    hint.innerHTML = "";
+    hint.appendChild(svg);
     hint.appendChild(document.createTextNode(" " + t.hint));
-    // Guide sections
     document.getElementById("guide-en").classList.toggle("active", l === "en");
     document.getElementById("guide-hi").classList.toggle("active", l === "hi");
-    // Lang buttons
-    document.querySelectorAll(".lang-btn").forEach(b => {
-      b.classList.toggle("active", b.dataset.lang === l);
-      b.setAttribute("aria-pressed", b.dataset.lang === l);
-    });
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === l));
   }
 
-  /* ── Language switch ── */
-  document.querySelectorAll(".lang-btn").forEach(btn => {
-    btn.addEventListener("click", () => applyLang(btn.dataset.lang));
-  });
+  document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => applyLang(btn.dataset.lang)));
 
-  /* ── Page routing ── */
-  function showPage(name) {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById("page-" + name).classList.add("active");
-    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-    const navBtn = document.getElementById("nav-" + name);
-    if (navBtn) navBtn.classList.add("active");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  /* ── Theme ── */
   const html = document.documentElement;
-  const SUN  = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
+  const SUN = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
   const MOON = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
 
   function setTheme(t) {
     html.dataset.theme = t;
-    try { localStorage.setItem("ig-theme", t); } catch {}
-    document.getElementById("themeLabel").textContent = t === "dark" ? "Light" : "Dark";
-    document.getElementById("themeIcon").innerHTML    = t === "dark" ? SUN : MOON;
+    try { localStorage.setItem("ig-theme", t); } catch(e) {}
+    document.getElementById("themeLabel").innerText = t === "dark" ? "Light" : "Dark";
+    document.getElementById("themeIcon").innerHTML = t === "dark" ? SUN : MOON;
   }
   try { setTheme(localStorage.getItem("ig-theme") || "dark"); } catch { setTheme("dark"); }
-  document.getElementById("themeToggle").addEventListener("click", () => {
-    setTheme(html.dataset.theme === "dark" ? "light" : "dark");
-  });
+  document.getElementById("themeToggle").addEventListener("click", () => setTheme(html.dataset.theme === "dark" ? "light" : "dark"));
 
-  /* ── Clear ── */
   document.getElementById("clearBtn").addEventListener("click", () => {
     document.getElementById("urlInput").value = "";
     document.getElementById("clearBtn").classList.remove("show");
@@ -925,104 +793,53 @@
     document.getElementById("urlInput").focus();
   });
 
-  /* ── UI helpers ── */
   function showLoader() {
     document.getElementById("loader").classList.add("visible");
     hideResult(); hideError();
     const msgs = lang === "hi" ? LOADER_HI : LOADER_EN;
     const el = document.getElementById("loaderText");
-    let i = 0; el.textContent = msgs[0];
-    loaderTimer = setInterval(() => { i = (i+1) % msgs.length; el.textContent = msgs[i]; }, 1500);
+    let i = 0; el.innerText = msgs[0];
+    loaderTimer = setInterval(() => { i = (i + 1) % msgs.length; el.innerText = msgs[i]; }, 1500);
   }
-  function hideLoader() {
-    document.getElementById("loader").classList.remove("visible");
-    clearInterval(loaderTimer); loaderTimer = null;
-  }
-  function showError(msg) {
-    document.getElementById("errorText").textContent = msg;
-    document.getElementById("errorBox").classList.add("visible");
-  }
+  function hideLoader() { document.getElementById("loader").classList.remove("visible"); clearInterval(loaderTimer); loaderTimer = null; }
+  function showError(msg) { document.getElementById("errorText").innerText = msg; document.getElementById("errorBox").classList.add("visible"); }
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
-  /* ══════════════════════════════
-     ✅ SMART showResult
-     Detects photo vs video from:
-     - data.media_type (if backend provides)
-     - data.ext / filename extension
-     - trying video load; fallback to img
-  ══════════════════════════════ */
   function showResult(data) {
-    const card       = document.getElementById("resultCard");
-    const videoWrap  = document.getElementById("videoWrap");
-    const photoWrap  = document.getElementById("photoWrap");
-    const thumbWrap  = document.getElementById("thumbWrap");
-    const videoPlayer= document.getElementById("videoPlayer");
-    const photoDisp  = document.getElementById("photoDisplay");
-
-    document.getElementById("resultTitle").textContent    = data.title || "Instagram Media";
-    document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
-
+    const videoWrap = document.getElementById("videoWrap");
+    const photoWrap = document.getElementById("photoWrap");
+    const thumbWrap = document.getElementById("thumbWrap");
+    const videoPlayer = document.getElementById("videoPlayer");
+    const photoDisp = document.getElementById("photoDisplay");
+    document.getElementById("resultTitle").innerText = data.title || "Instagram Media";
+    document.getElementById("resultUploader").innerText = data.uploader ? `@${data.uploader}` : "";
     const dl = document.getElementById("downloadLink");
     dl.href = data.download_url || "#";
-
-    // ── Detect media type ──
-    const url  = (data.download_url || "").toLowerCase();
-    const ext  = (data.ext || "").toLowerCase();
-    const mtype= (data.media_type || data.type || "").toLowerCase();
-
-    // Photo indicators: extension is jpg/jpeg/png/webp OR media_type says image OR no video ext
-    const isPhoto =
-      mtype.includes("image") || mtype === "photo" ||
-      /\.(jpg|jpeg|png|webp|gif)(\?|$)/.test(url) ||
-      ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp";
-
-    // Video indicators
-    const isVideo =
-      mtype.includes("video") ||
-      /\.(mp4|webm|mov|m4v)(\?|$)/.test(url) ||
-      ext === "mp4" || ext === "webm" || ext === "mov";
-
-    // Reset all
-    videoWrap.style.display = "none";
-    photoWrap.style.display = "none";
-    thumbWrap.style.display = "none";
-    videoPlayer.src = "";
-    photoDisp.src   = "";
-
+    const url = (data.download_url || "").toLowerCase();
+    const ext = (data.ext || "").toLowerCase();
+    const mtype = (data.media_type || "").toLowerCase();
+    const isPhoto = mtype.includes("image") || mtype === "photo" || /\.(jpg|jpeg|png|webp|gif)/.test(url) || ext === "jpg" || ext === "jpeg" || ext === "png";
+    const isVideo = mtype.includes("video") || /\.(mp4|webm|mov|m4v)/.test(url) || ext === "mp4" || ext === "webm";
+    videoWrap.style.display = "none"; photoWrap.style.display = "none"; thumbWrap.style.display = "none"; videoPlayer.src = ""; photoDisp.src = "";
     if (isPhoto) {
-      // Show photo
       photoDisp.src = data.download_url;
       photoWrap.style.display = "block";
       dl.download = "instaget_photo.jpg";
-      dl.textContent = ""; // rebuild with icon
-      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
+      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
     } else if (isVideo || data.download_url) {
-      // Show video player
       videoPlayer.src = data.download_url;
       videoWrap.style.display = "block";
-      document.getElementById("videoBadge").textContent = "🎬 VIDEO";
+      document.getElementById("videoBadge").innerHTML = "🎬 VIDEO";
       dl.download = "instaget_video.mp4";
-      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
-      // If video fails to load, fallback to thumbnail
-      videoPlayer.onerror = () => {
-        videoWrap.style.display = "none";
-        showThumbnail(data);
-      };
-    } else {
-      showThumbnail(data);
-    }
-
-    // Also try thumbnail in thumb wrap as fallback bg
-    if (data.thumbnail && videoWrap.style.display === "none" && photoWrap.style.display === "none") {
-      showThumbnail(data);
-    }
-
-    card.classList.add("visible");
+      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
+      videoPlayer.onerror = () => { videoWrap.style.display = "none"; showThumbnail(data); };
+    } else { showThumbnail(data); }
+    document.getElementById("resultCard").classList.add("visible");
     document.getElementById("clearBtn").classList.add("show");
   }
 
   function showThumbnail(data) {
-    const thumbWrap   = document.getElementById("thumbWrap");
+    const thumbWrap = document.getElementById("thumbWrap");
     const placeholder = document.getElementById("thumbPlaceholder");
     thumbWrap.style.display = "block";
     const old = thumbWrap.querySelector("img.thumb-img");
@@ -1035,63 +852,51 @@
       img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
       img.onerror = () => { placeholder.style.display = "flex"; img.remove(); };
       thumbWrap.insertBefore(img, thumbWrap.firstChild);
-    } else {
-      placeholder.style.display = "flex";
-    }
+    } else { placeholder.style.display = "flex"; }
   }
 
   function hideResult() {
     document.getElementById("resultCard").classList.remove("visible");
     document.getElementById("videoPlayer").pause();
     document.getElementById("videoPlayer").src = "";
-    document.getElementById("videoWrap").style.display  = "none";
-    document.getElementById("photoWrap").style.display  = "none";
-    document.getElementById("thumbWrap").style.display  = "block";
+    document.getElementById("videoWrap").style.display = "none";
+    document.getElementById("photoWrap").style.display = "none";
+    document.getElementById("thumbWrap").style.display = "block";
     document.getElementById("thumbPlaceholder").style.display = "flex";
   }
 
-  /* ── Fetch ── */
   document.getElementById("urlInput").addEventListener("keydown", e => { if (e.key === "Enter") doFetch(); });
   document.getElementById("fetchBtn").addEventListener("click", doFetch);
 
   async function doFetch() {
     const url = document.getElementById("urlInput").value.trim();
     const btn = document.getElementById("fetchBtn");
-    const t   = T[lang];
-    if (!url)                           { showError(t.errEmpty);   return; }
+    const t = T[lang];
+    if (!url) { showError(t.errEmpty); return; }
     if (!url.includes("instagram.com")) { showError(t.errInvalid); return; }
     btn.disabled = true;
     hideError(); showLoader();
     try {
-      const res  = await fetch(`${API_BASE}/download`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ url }),
-        signal: AbortSignal.timeout(60000)
-      });
+      const res = await fetch(`${API_BASE}/download`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }), signal: AbortSignal.timeout(60000) });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || `Server error (${res.status})`);
-      hideLoader();
-      showResult(data);
-    } catch(err) {
+      hideLoader(); showResult(data);
+    } catch (err) {
       hideLoader();
       if (err.name === "TimeoutError" || err.message === "Failed to fetch") showError(T[lang].errServer);
       else showError(err.message || "Unknown error.");
-    } finally {
-      btn.disabled = false;
-    }
+    } finally { btn.disabled = false; }
   }
 
-  /* ── FAQ accordion ── */
   document.addEventListener("click", e => {
     const q = e.target.closest(".faq-q");
     if (!q) return;
     const item = q.closest(".faq-item");
-    const was  = item.classList.contains("open");
+    const was = item.classList.contains("open");
     document.querySelectorAll(".faq-item.open").forEach(i => i.classList.remove("open"));
     if (!was) item.classList.add("open");
   });
 
-  /* ── Init ── */
   applyLang("en");
 </script>
 </body>

@@ -511,22 +511,6 @@
       .lang-btn { padding: 4px 9px; font-size: 11px; }
       .theme-btn { padding: 6px 10px; font-size: 11px; }
     }
-
-    /* Add to your style section */
-.audio-indicator {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(4px);
-    color: #00d68f;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    z-index: 10;
-    pointer-events: none;
-}
   </style>
 </head>
 <body>
@@ -967,94 +951,76 @@
      - data.ext / filename extension
      - trying video load; fallback to img
   ══════════════════════════════ */
-  // Replace the showResult function with this:
+  function showResult(data) {
+    const card       = document.getElementById("resultCard");
+    const videoWrap  = document.getElementById("videoWrap");
+    const photoWrap  = document.getElementById("photoWrap");
+    const thumbWrap  = document.getElementById("thumbWrap");
+    const videoPlayer= document.getElementById("videoPlayer");
+    const photoDisp  = document.getElementById("photoDisplay");
 
-function showResult(data) {
-    const card = document.getElementById("resultCard");
-    const videoWrap = document.getElementById("videoWrap");
-    const photoWrap = document.getElementById("photoWrap");
-    const thumbWrap = document.getElementById("thumbWrap");
-    const videoPlayer = document.getElementById("videoPlayer");
-    const photoDisp = document.getElementById("photoDisplay");
-
-    document.getElementById("resultTitle").textContent = data.title || "Instagram Media";
+    document.getElementById("resultTitle").textContent    = data.title || "Instagram Media";
     document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
 
     const dl = document.getElementById("downloadLink");
     dl.href = data.download_url || "#";
 
-    const url = (data.download_url || "").toLowerCase();
-    const ext = (data.ext || "").toLowerCase();
-    const mtype = (data.media_type || "").toLowerCase();
+    // ── Detect media type ──
+    const url  = (data.download_url || "").toLowerCase();
+    const ext  = (data.ext || "").toLowerCase();
+    const mtype= (data.media_type || data.type || "").toLowerCase();
 
-    const isPhoto = mtype.includes("image") || mtype === "photo" ||
-        /\.(jpg|jpeg|png|webp|gif)/.test(url) ||
-        ext === "jpg" || ext === "jpeg" || ext === "png";
+    // Photo indicators: extension is jpg/jpeg/png/webp OR media_type says image OR no video ext
+    const isPhoto =
+      mtype.includes("image") || mtype === "photo" ||
+      /\.(jpg|jpeg|png|webp|gif)(\?|$)/.test(url) ||
+      ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp";
 
-    const isVideo = mtype.includes("video") || mtype === "reel" ||
-        /\.(mp4|webm|mov|m4v)/.test(url) ||
-        ext === "mp4" || ext === "webm";
+    // Video indicators
+    const isVideo =
+      mtype.includes("video") ||
+      /\.(mp4|webm|mov|m4v)(\?|$)/.test(url) ||
+      ext === "mp4" || ext === "webm" || ext === "mov";
 
+    // Reset all
     videoWrap.style.display = "none";
     photoWrap.style.display = "none";
     thumbWrap.style.display = "none";
     videoPlayer.src = "";
-    photoDisp.src = "";
+    photoDisp.src   = "";
 
-    if (isPhoto && data.download_url) {
-        photoDisp.src = data.download_url;
-        photoWrap.style.display = "block";
-        dl.download = `instaget_photo.${ext || "jpg"}`;
-        dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
-    } 
-    else if (isVideo && data.download_url) {
-        // CRITICAL: Set video source and force audio
-        videoPlayer.src = data.download_url;
-        videoPlayer.muted = false;  // Ensure audio is not muted
-        videoPlayer.volume = 1;      // Set volume to max
-        
-        // Add audio indicator
-        const audioIndicator = document.createElement("div");
-        audioIndicator.className = "audio-indicator";
-        audioIndicator.innerHTML = "🎵 Audio Available";
-        audioIndicator.style.cssText = "position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#00d68f; padding:4px 10px; border-radius:20px; font-size:11px; z-index:3;";
-        
-        // Remove old indicator if exists
-        const oldIndicator = videoWrap.querySelector(".audio-indicator");
-        if (oldIndicator) oldIndicator.remove();
-        videoWrap.appendChild(audioIndicator);
-        
-        videoPlayer.load();
-        videoWrap.style.display = "block";
-        document.getElementById("videoBadge").innerHTML = "🎬 VIDEO + AUDIO";
-        
-        dl.download = `instaget_video_${Date.now()}.mp4`;
-        dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video (with Audio)`;
-        
-        if (data.thumbnail) {
-            videoPlayer.poster = data.thumbnail;
-        }
-        
-        // Log audio status
-        videoPlayer.onloadedmetadata = () => {
-            console.log("Video loaded, checking audio...");
-            videoPlayer.muted = false;
-            videoPlayer.volume = 1;
-        };
-        
-        videoPlayer.onerror = () => {
-            console.warn("Video error, but download still works");
-            audioIndicator.style.background = "rgba(255,71,87,0.6)";
-            audioIndicator.innerHTML = "⚠️ Download may have audio";
-        };
-    } 
-    else {
+    if (isPhoto) {
+      // Show photo
+      photoDisp.src = data.download_url;
+      photoWrap.style.display = "block";
+      dl.download = "instaget_photo.jpg";
+      dl.textContent = ""; // rebuild with icon
+      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
+    } else if (isVideo || data.download_url) {
+      // Show video player
+      videoPlayer.src = data.download_url;
+      videoWrap.style.display = "block";
+      document.getElementById("videoBadge").textContent = "🎬 VIDEO";
+      dl.download = "instaget_video.mp4";
+      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
+      // If video fails to load, fallback to thumbnail
+      videoPlayer.onerror = () => {
+        videoWrap.style.display = "none";
         showThumbnail(data);
+      };
+    } else {
+      showThumbnail(data);
+    }
+
+    // Also try thumbnail in thumb wrap as fallback bg
+    if (data.thumbnail && videoWrap.style.display === "none" && photoWrap.style.display === "none") {
+      showThumbnail(data);
     }
 
     card.classList.add("visible");
     document.getElementById("clearBtn").classList.add("show");
-}
+  }
+
   function showThumbnail(data) {
     const thumbWrap   = document.getElementById("thumbWrap");
     const placeholder = document.getElementById("thumbPlaceholder");

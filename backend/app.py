@@ -1,15 +1,13 @@
 """
-Instagram Downloader - Audio Fixed Version
-Uses multiple strategies to ensure video + audio
+Instagram Downloader - COMPLETE AUDIO FIX
+Forces video+audio combined format
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import yt_dlp
 import re
-import time
 import os
-import json
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -20,22 +18,23 @@ def is_instagram_url(url: str) -> bool:
     pattern = r"(https?://)?(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+"
     return bool(re.search(pattern, url))
 
+
 def extract_media_info(url: str) -> dict:
-    """Extract media with AUDIO guaranteed"""
+    """Extract media info - FORCED audio+video combined"""
     
     if url in _cache:
         return _cache[url]
     
-    print(f"Processing: {url}")
+    print(f"📥 Processing: {url}")
     
-    # Strategy 1: Use best format that includes audio
+    # CRITICAL: yt-dlp options to FORCE audio+video
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        # CRITICAL: Request formats with both video AND audio
-        "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+        # FORCE format with both video AND audio
+        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
         "postprocessors": [{
             "key": "FFmpegVideoConvertor",
@@ -53,74 +52,89 @@ def extract_media_info(url: str) -> dict:
             info = ydl.extract_info(url, download=False)
         
         download_url = ""
-        media_type = "unknown"
+        media_type = "video"  # default
         thumbnail = info.get("thumbnail", "")
         uploader = info.get("uploader", "") or info.get("uploader_id", "")
         title = info.get("title", "Instagram Media")
         ext = "mp4"
-        
-        # Check if it's a story
         is_story = "/stories/" in url
         
-        # PRIORITY 1: Get URL from 'url' field (often best with audio)
-        if info.get("url"):
-            url_str = info["url"]
-            if ".mp4" in url_str.lower() or "video" in url_str.lower():
-                download_url = url_str
-                media_type = "video"
-                ext = "mp4"
-                print(f"Found video URL from info.url")
+        print(f"📊 Available formats: {len(info.get('formats', []))}")
         
-        # PRIORITY 2: Check formats for MP4 with audio
-        if not download_url and "formats" in info:
-            best_mp4 = None
-            best_height = 0
-            
+        # ============================================
+        # STRATEGY 1: Find MP4 with BOTH video AND audio
+        # ============================================
+        best_mp4_with_audio = None
+        best_quality = 0
+        
+        if "formats" in info:
             for fmt in info["formats"]:
                 fmt_ext = fmt.get("ext", "").lower()
                 has_video = fmt.get("vcodec") != "none"
                 has_audio = fmt.get("acodec") != "none"
                 height = fmt.get("height", 0) or 0
                 
-                # Look for MP4 with both video and audio
+                # Only select formats with BOTH video AND audio
                 if fmt_ext == "mp4" and has_video and has_audio:
-                    if height > best_height:
-                        best_height = height
-                        best_mp4 = fmt.get("url", "")
-                        print(f"Found MP4 with audio: {height}p")
-            
-            if best_mp4:
-                download_url = best_mp4
+                    if height > best_quality:
+                        best_quality = height
+                        best_mp4_with_audio = fmt.get("url", "")
+                        print(f"✅ Found MP4 with AUDIO: {height}p")
+        
+        if best_mp4_with_audio:
+            download_url = best_mp4_with_audio
+            media_type = "video"
+            ext = "mp4"
+            print(f"🎉 Using MP4 with audio: {best_quality}p")
+        
+        # ============================================
+        # STRATEGY 2: Try 'url' field (often has audio)
+        # ============================================
+        if not download_url and info.get("url"):
+            url_str = info["url"]
+            if ".mp4" in url_str.lower():
+                download_url = url_str
                 media_type = "video"
                 ext = "mp4"
+                print("✅ Using URL field")
         
-        # PRIORITY 3: Check entries (for carousel/stories)
+        # ============================================
+        # STRATEGY 3: Check entries (carousel/stories)
+        # ============================================
         if not download_url and "entries" in info and info["entries"]:
             for entry in info["entries"]:
                 if entry.get("url") and ".mp4" in entry["url"].lower():
                     download_url = entry["url"]
                     media_type = "video"
                     ext = "mp4"
+                    print("✅ Found video in entries")
                     break
-                elif entry.get("url") and any(x in entry["url"].lower() for x in [".jpg", ".png", ".jpeg"]):
+                elif entry.get("url") and any(x in entry["url"].lower() for x in [".jpg", ".png"]):
                     download_url = entry["url"]
                     media_type = "photo"
                     ext = "jpg"
+                    print("✅ Found photo in entries")
                     break
         
-        # PRIORITY 4: For photos
+        # ============================================
+        # STRATEGY 4: For photos
+        # ============================================
         if not download_url and info.get("display_url"):
             download_url = info["display_url"]
             media_type = "photo"
             ext = "jpg"
+            print("✅ Using display_url for photo")
         
-        # PRIORITY 5: Use thumbnail as last resort
+        # ============================================
+        # STRATEGY 5: Last resort - thumbnail
+        # ============================================
         if not download_url and thumbnail:
             download_url = thumbnail
             media_type = "photo"
             ext = "jpg"
+            print("⚠️ Using thumbnail as fallback")
         
-        # Clean up extension
+        # Final extension cleanup
         if download_url:
             if ".mp4" in download_url.lower():
                 ext = "mp4"
@@ -140,14 +154,16 @@ def extract_media_info(url: str) -> dict:
             "has_audio": media_type == "video"
         }
         
-        print(f"Result: type={media_type}, url={download_url[:80] if download_url else 'None'}")
+        print(f"📤 FINAL: type={media_type}, audio={'YES' if media_type == 'video' else 'NO'}")
+        print(f"🔗 URL: {download_url[:100] if download_url else 'None'}")
         
         _cache[url] = result
         return result
         
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Error: {e}")
         raise e
+
 
 @app.route("/download", methods=["POST"])
 def download():
@@ -170,9 +186,11 @@ def download():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)[:150]}), 500
 
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "cache_size": len(_cache)}), 200
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

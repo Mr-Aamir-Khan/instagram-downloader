@@ -122,17 +122,24 @@ def _ydl_opts() -> dict:
         "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
-        # ✅ SSL FIX
         "nocheckcertificate": True,
+        # ✅ 403 FIX
+        "extractor_args": {
+            "instagram": {
+                "include_feed_videos": True,
+            }
+        },
         "http_headers": {
             "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                "Version/17.0 Mobile/15E148 Safari/604.1"
             ),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
             "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.instagram.com/",
+            "Origin": "https://www.instagram.com",
         },
     }
     if PROXY:

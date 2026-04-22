@@ -26,7 +26,6 @@ from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
-api_key=os.getenv("SCRAPER_API_KEY")
 # ─────────────────────────────────────────────
 # Logging
 # ─────────────────────────────────────────────
@@ -58,7 +57,8 @@ limiter = Limiter(
 # ─────────────────────────────────────────────
 CACHE_TTL = int(os.getenv("CACHE_TTL", 300))          # seconds
 MAX_CAROUSEL_ITEMS = int(os.getenv("MAX_CAROUSEL", 10))
-PROXY = os.getenv("SCRAPER_PROXY", "")                 # optional
+api_key= os.getenv("SCRAPER_API_KEY")   
+PROXY = f"http://scraperapi:{api_key}@proxy-server.scraperapi.com:8001" if api_key else ""              # optional
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
 # ─────────────────────────────────────────────
@@ -122,9 +122,6 @@ def _ydl_opts() -> dict:
         "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
-        # PROXY (SCRAPERAPI)
-        "proxy":
-            f"http://scraperapi:"{api_key}@proxy-server.scraperapi.com:8001",
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

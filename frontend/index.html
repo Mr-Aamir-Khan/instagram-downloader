@@ -486,6 +486,21 @@
       .btn-fetch, .btn-clear.show { width: 100%; justify-content: center; }
       .faq-section { padding: 20px; }
     }
+    .carousel-item-btn {
+  padding: 6px 14px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  transition: all var(--t);
+}
+.carousel-item-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
   </style>
 </head>
 <body>
@@ -578,9 +593,10 @@
           <span id="dlLinkText">Download</span>
         </a>
       </div>
+      <!-- ✅ Carousel — sirf tab dikhega jab 2+ items hon -->
+      <div id="carouselWrap" style="display:none; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
     </div>
   </div>
-
   <!-- How It Works -->
   <div class="how-it-works">
     <div class="how-step"><div class="how-num">1</div><div class="how-label" id="step1Text">Copy an Instagram link</div></div>
@@ -820,57 +836,97 @@
   function showError(msg) { document.getElementById("errorText").textContent = msg; document.getElementById("errorBox").classList.add("visible"); }
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
-  function showResult(data) {
-    const videoWrap = document.getElementById("videoWrap");
-    const photoWrap = document.getElementById("photoWrap");
-    const thumbWrap = document.getElementById("thumbWrap");
-    const videoPlayer = document.getElementById("videoPlayer");
-    const photoDisp = document.getElementById("photoDisplay");
-    document.getElementById("resultTitle").textContent = data.title || "Instagram Media";
-    document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
-    const dl = document.getElementById("downloadLink");
-    dl.href = data.download_url || "#";
-    const url = (data.download_url || "").toLowerCase();
-    const ext = (data.ext || "").toLowerCase();
-    const mtype = (data.media_type || "").toLowerCase();
-    const isPhoto = mtype.includes("image") || mtype === "photo" || /\.(jpg|jpeg|png|webp|gif)/.test(url) || ext === "jpg" || ext === "jpeg" || ext === "png";
-    const isVideo = mtype.includes("video") || /\.(mp4|webm|mov|m4v)/.test(url) || ext === "mp4" || ext === "webm";
-    videoWrap.style.display = "none"; photoWrap.style.display = "none"; thumbWrap.style.display = "none"; videoPlayer.src = ""; photoDisp.src = "";
-    if (isPhoto) {
-      photoDisp.src = data.download_url;
-      photoWrap.style.display = "block";
-      dl.download = "instaget_photo.jpg";
-      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
-    } else if (isVideo || data.download_url) {
-      videoPlayer.src = data.download_url;
-      videoWrap.style.display = "block";
-      document.getElementById("videoBadge").textContent = "🎬 VIDEO";
-      dl.download = "instaget_video.mp4";
-      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
-      videoPlayer.onerror = () => { videoWrap.style.display = "none"; showThumbnail(data); };
-    } else { showThumbnail(data); }
-    document.getElementById("resultCard").classList.add("visible");
-    document.getElementById("clearBtn").classList.add("show");
+ function showResult(data) {
+  // ✅ NEW: items array se pehla item lo
+  
+  const item = data.items[0];
+
+  const videoWrap = document.getElementById("videoWrap");
+  const photoWrap = document.getElementById("photoWrap");
+  const thumbWrap = document.getElementById("thumbWrap");
+  const videoPlayer = document.getElementById("videoPlayer");
+  const photoDisp = document.getElementById("photoDisplay");
+
+  // ✅ title/uploader ab item se aata hai
+  document.getElementById("resultTitle").textContent = item.title || "Instagram Media";
+  document.getElementById("resultUploader").textContent = item.uploader ? `@${item.uploader}` : "";
+
+  const dl = document.getElementById("downloadLink");
+  dl.href = item.download_url || "#";
+
+  const url = (item.download_url || "").toLowerCase();
+  const ext = (item.ext || "").toLowerCase();
+  const mtype = (item.media_type || "").toLowerCase();
+
+  const isPhoto = mtype.includes("image") || mtype === "photo" || /\.(jpg|jpeg|png|webp|gif)/.test(url) || ext === "jpg" || ext === "jpeg" || ext === "png";
+  const isVideo = mtype.includes("video") || /\.(mp4|webm|mov|m4v)/.test(url) || ext === "mp4" || ext === "webm";
+
+  videoWrap.style.display = "none";
+  photoWrap.style.display = "none";
+  thumbWrap.style.display = "none";
+  videoPlayer.src = "";
+  photoDisp.src = "";
+
+  if (isPhoto) {
+    photoDisp.src = item.download_url;
+    photoWrap.style.display = "block";
+    dl.download = "instaget_photo.jpg";
+    dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
+  } else if (isVideo || item.download_url) {
+    videoPlayer.src = item.download_url;
+    videoWrap.style.display = "block";
+    document.getElementById("videoBadge").textContent = "🎬 VIDEO";
+    dl.download = "instaget_video.mp4";
+    dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
+    videoPlayer.onerror = () => { videoWrap.style.display = "none"; showThumbnail(item); };
+  } else {
+    showThumbnail(item);
   }
 
-  function showThumbnail(data) {
-    const thumbWrap = document.getElementById("thumbWrap");
-    const placeholder = document.getElementById("thumbPlaceholder");
-    thumbWrap.style.display = "block";
-    const old = thumbWrap.querySelector("img.thumb-img");
-    if (old) old.remove();
-    if (data.thumbnail) {
-      placeholder.style.display = "none";
-      const img = document.createElement("img");
-      img.className = "thumb-img";
-      img.src = data.thumbnail;
-      img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-      img.onerror = () => { placeholder.style.display = "flex"; img.remove(); };
-      thumbWrap.insertBefore(img, thumbWrap.firstChild);
-    } else { placeholder.style.display = "flex"; }
+  // ✅ NEW: Carousel support — agar 1 se zyada items hain
+  const carouselWrap = document.getElementById("carouselWrap");
+  if (carouselWrap) {
+    carouselWrap.innerHTML = "";
+    if (data.count > 1) {
+      carouselWrap.style.display = "flex";
+      data.items.forEach((ci, i) => {
+        const a = document.createElement("a");
+        a.href = ci.download_url;
+        a.download = `instaget_${i + 1}.${ci.ext || "jpg"}`;
+        a.target = "_blank";
+        a.textContent = `⬇ Item ${i + 1} (${ci.media_type})`;
+        a.style.cssText = "padding:6px 12px;background:#333;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;";
+        carouselWrap.appendChild(a);
+      });
+    } else {
+      carouselWrap.style.display = "none";
+    }
   }
 
-  function hideResult() {
+  document.getElementById("resultCard").classList.add("visible");
+  document.getElementById("clearBtn").classList.add("show");
+}
+
+// showThumbnail mein bhi item lega ab (data nahi)
+function showThumbnail(item) {
+  const thumbWrap = document.getElementById("thumbWrap");
+  const placeholder = document.getElementById("thumbPlaceholder");
+  thumbWrap.style.display = "block";
+  const old = thumbWrap.querySelector("img.thumb-img");
+  if (old) old.remove();
+  if (item.thumbnail) {
+    placeholder.style.display = "none";
+    const img = document.createElement("img");
+    img.className = "thumb-img";
+    img.src = item.thumbnail;
+    img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
+    img.onerror = () => { placeholder.style.display = "flex"; img.remove(); };
+    thumbWrap.insertBefore(img, thumbWrap.firstChild);
+  } else {
+    placeholder.style.display = "flex";
+  }
+}
+ function hideResult() {
     document.getElementById("resultCard").classList.remove("visible");
     document.getElementById("videoPlayer").pause();
     document.getElementById("videoPlayer").src = "";
@@ -878,6 +934,8 @@
     document.getElementById("photoWrap").style.display = "none";
     document.getElementById("thumbWrap").style.display = "block";
     document.getElementById("thumbPlaceholder").style.display = "flex";
+    const cw = document.getElementById("carouselWrap");
+    if (cw) { cw.innerHTML = ""; cw.style.display = "none"; }
   }
 
   document.getElementById("urlInput").addEventListener("keydown", e => { if (e.key === "Enter") doFetch(); });
@@ -888,7 +946,9 @@
     const btn = document.getElementById("fetchBtn");
     const t = T[lang];
     if (!url) { showError(t.errEmpty); return; }
-    if (!url.includes("instagram.com")) { showError(t.errInvalid); return; }
+    // ✅ Strong validation
+    const igPattern = /instagram\.com\/(p|reel|tv|stories)\/[\w\-]+/;
+    if (!igPattern.test(url)) { showError(t.errInvalid); return; }
     btn.disabled = true;
     hideError(); showLoader();
     try {

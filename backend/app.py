@@ -122,6 +122,8 @@ def _ydl_opts() -> dict:
         "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
+        # ✅ SSL FIX
+        "nocheckcertificate": True,
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

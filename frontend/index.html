@@ -303,6 +303,7 @@
     }
     .how-label { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
 
+    /* FAQ / Guide Section */
     .faq-section {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -491,6 +492,7 @@
 
 <div class="bg-mesh" aria-hidden="true"></div>
 
+<!-- NAVBAR - Only Logo, Language & Theme -->
 <nav class="navbar">
   <div class="nav-inner">
     <span class="nav-logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">InstaGet</span>
@@ -510,13 +512,16 @@
   </div>
 </nav>
 
+<!-- MAIN CONTENT - Single Scrollable Page -->
 <div class="wrapper">
 
+  <!-- Hero Section -->
   <div class="hero-text">
     <h1>Download Instagram <span>Reels, Photos</span> & Videos</h1>
     <p>Paste any public Instagram link — Reels, Posts, Photos or Stories. Get HD quality instantly, no login needed.</p>
   </div>
 
+  <!-- Input Card -->
   <div class="card">
     <label class="input-label" for="urlInput" id="inputLabel">Paste Instagram Link</label>
     <div class="input-row">
@@ -533,16 +538,19 @@
     </p>
   </div>
 
+  <!-- Loader -->
   <div class="loader-wrap" id="loader">
     <div class="spinner-ring"></div>
     <div class="loader-text" id="loaderText">Fetching…</div>
   </div>
 
+  <!-- Error -->
   <div class="error-box" id="errorBox">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
     <span id="errorText">Something went wrong.</span>
   </div>
 
+  <!-- Result Card -->
   <div class="result-card" id="resultCard">
     <div class="media-area" id="videoWrap" style="display:none;">
       <video id="videoPlayer" controls playsinline preload="metadata"></video>
@@ -573,19 +581,21 @@
     </div>
   </div>
 
+  <!-- How It Works -->
   <div class="how-it-works">
     <div class="how-step"><div class="how-num">1</div><div class="how-label" id="step1Text">Copy an Instagram link</div></div>
     <div class="how-step"><div class="how-num">2</div><div class="how-label" id="step2Text">Paste above & click Fetch</div></div>
     <div class="how-step"><div class="how-num">3</div><div class="how-label" id="step3Text">Download in HD quality</div></div>
   </div>
 
-  <!-- FAQ / GUIDE SECTION -->
+  <!-- FAQ / GUIDE SECTION (New Div) -->
   <div class="faq-section">
     <div class="faq-title" id="faqMainTitle">📖 How to Use InstaGet</div>
     <div class="faq-sub" id="faqMainSub">Everything you need to know — Steps, Features & FAQ</div>
 
     <!-- ENGLISH CONTENT -->
     <div class="lang-content active" id="guide-en">
+      <!-- Features Grid -->
       <div class="features-grid">
         <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD Quality</span></div>
         <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">No Login</span></div>
@@ -593,6 +603,7 @@
         <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">Fast</span></div>
       </div>
 
+      <!-- Step-by-Step Guide -->
       <p class="guide-sub">⬇️ Step-by-Step Guide</p>
       <div class="steps-container">
         <div class="step-item"><div class="step-number">1</div><div class="step-text">Open Instagram app or website</div></div>
@@ -605,6 +616,7 @@
 
       <div class="divider"></div>
 
+      <!-- Features Details -->
       <p class="guide-sub">✨ Features</p>
       <div class="steps-container">
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Reels Downloader</strong> — Save any Reel with original audio</div></div>
@@ -618,6 +630,7 @@
 
       <div class="divider"></div>
 
+      <!-- Supported Devices -->
       <p class="guide-sub">📱 Supported Devices & Browsers</p>
       <div class="devices-list">
         <span class="device-badge">📱 Android</span>
@@ -637,6 +650,7 @@
 
       <div class="divider"></div>
 
+      <!-- FAQ -->
       <p class="guide-sub">❓ Frequently Asked Questions</p>
       <div class="faq-list">
         <div class="faq-item"><button class="faq-q">Is InstaGet completely free? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes — 100% free. No hidden charges, no subscription, no account required.</div></div>
@@ -722,6 +736,7 @@
     </div>
   </div>
 
+  <!-- SEO Block -->
   <div class="seo-block">
     <h2>Best Free Instagram Video Downloader Online</h2>
     <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
@@ -752,15 +767,15 @@
   function applyLang(l) {
     lang = l;
     const t = T[l];
-    document.getElementById("inputLabel").innerText = t.inputLabel;
-    document.getElementById("fetchBtnText").innerText = t.dlBtn;
-    document.getElementById("clearBtnText").innerText = t.clearBtn;
-    document.getElementById("dlLinkText").innerText = t.dlLink;
-    document.getElementById("step1Text").innerText = t.step1;
-    document.getElementById("step2Text").innerText = t.step2;
-    document.getElementById("step3Text").innerText = t.step3;
-    document.getElementById("faqMainTitle").innerText = l === "en" ? "📖 How to Use InstaGet" : "📖 InstaGet का उपयोग कैसे करें";
-    document.getElementById("faqMainSub").innerText = l === "en" ? "Everything you need to know — Steps, Features & FAQ" : "आपको जो कुछ भी जानना चाहिए — चरण, विशेषताएं और FAQ";
+    document.getElementById("inputLabel").textContent = t.inputLabel;
+    document.getElementById("fetchBtnText").textContent = t.dlBtn;
+    document.getElementById("clearBtnText").textContent = t.clearBtn;
+    document.getElementById("dlLinkText").textContent = t.dlLink;
+    document.getElementById("step1Text").textContent = t.step1;
+    document.getElementById("step2Text").textContent = t.step2;
+    document.getElementById("step3Text").textContent = t.step3;
+    document.getElementById("faqMainTitle").textContent = l === "en" ? "📖 How to Use InstaGet" : "📖 InstaGet का उपयोग कैसे करें";
+    document.getElementById("faqMainSub").textContent = l === "en" ? "Everything you need to know — Steps, Features & FAQ" : "आपको जो कुछ भी जानना चाहिए — चरण, विशेषताएं और FAQ";
     const hint = document.getElementById("hintText");
     const svg = hint.querySelector("svg").cloneNode(true);
     hint.innerHTML = "";
@@ -779,8 +794,8 @@
 
   function setTheme(t) {
     html.dataset.theme = t;
-    try { localStorage.setItem("ig-theme", t); } catch(e) {}
-    document.getElementById("themeLabel").innerText = t === "dark" ? "Light" : "Dark";
+    try { localStorage.setItem("ig-theme", t); } catch (e) {}
+    document.getElementById("themeLabel").textContent = t === "dark" ? "Light" : "Dark";
     document.getElementById("themeIcon").innerHTML = t === "dark" ? SUN : MOON;
   }
   try { setTheme(localStorage.getItem("ig-theme") || "dark"); } catch { setTheme("dark"); }
@@ -798,11 +813,11 @@
     hideResult(); hideError();
     const msgs = lang === "hi" ? LOADER_HI : LOADER_EN;
     const el = document.getElementById("loaderText");
-    let i = 0; el.innerText = msgs[0];
-    loaderTimer = setInterval(() => { i = (i + 1) % msgs.length; el.innerText = msgs[i]; }, 1500);
+    let i = 0; el.textContent = msgs[0];
+    loaderTimer = setInterval(() => { i = (i + 1) % msgs.length; el.textContent = msgs[i]; }, 1500);
   }
   function hideLoader() { document.getElementById("loader").classList.remove("visible"); clearInterval(loaderTimer); loaderTimer = null; }
-  function showError(msg) { document.getElementById("errorText").innerText = msg; document.getElementById("errorBox").classList.add("visible"); }
+  function showError(msg) { document.getElementById("errorText").textContent = msg; document.getElementById("errorBox").classList.add("visible"); }
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
   function showResult(data) {
@@ -811,8 +826,8 @@
     const thumbWrap = document.getElementById("thumbWrap");
     const videoPlayer = document.getElementById("videoPlayer");
     const photoDisp = document.getElementById("photoDisplay");
-    document.getElementById("resultTitle").innerText = data.title || "Instagram Media";
-    document.getElementById("resultUploader").innerText = data.uploader ? `@${data.uploader}` : "";
+    document.getElementById("resultTitle").textContent = data.title || "Instagram Media";
+    document.getElementById("resultUploader").textContent = data.uploader ? `@${data.uploader}` : "";
     const dl = document.getElementById("downloadLink");
     dl.href = data.download_url || "#";
     const url = (data.download_url || "").toLowerCase();
@@ -829,7 +844,7 @@
     } else if (isVideo || data.download_url) {
       videoPlayer.src = data.download_url;
       videoWrap.style.display = "block";
-      document.getElementById("videoBadge").innerHTML = "🎬 VIDEO";
+      document.getElementById("videoBadge").textContent = "🎬 VIDEO";
       dl.download = "instaget_video.mp4";
       dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
       videoPlayer.onerror = () => { videoWrap.style.display = "none"; showThumbnail(data); };

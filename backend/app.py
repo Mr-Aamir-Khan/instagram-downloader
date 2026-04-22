@@ -1,233 +1,417 @@
 """
-Instagram Downloader - FULLY FIXED
-- Photos download working
-- Video audio working
-- Stories working
+Instagram Downloader - Production Grade
+Features:
+- Rate limiting (per IP + global)
+- Multi-post / carousel support
+- Structured error handling
+- Input validation & sanitization
+- Request logging
+- Cache with TTL
+- Health + metrics endpoint
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import yt_dlp
 import re
 import os
+import time
+import uuid
+import logging
+import threading
+from dataclasses import dataclass, asdict, field
+from typing import Optional
+from dotenv import load_dotenv
 
+load_dotenv()
+api_key=os.getenv("SCRAPER_API_KEY")
+# ─────────────────────────────────────────────
+# Logging
+# ─────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("app.log", encoding="utf-8"),
+    ],
+)
+logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────
+# App & Rate Limiter
+# ─────────────────────────────────────────────
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
 
-_cache = {}
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=os.getenv("REDIS_URL", "memory://"),
+)
 
-def is_instagram_url(url: str) -> bool:
-    pattern = r"(https?://)?(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+"
-    return bool(re.search(pattern, url))
+# ─────────────────────────────────────────────
+# Config
+# ─────────────────────────────────────────────
+CACHE_TTL = int(os.getenv("CACHE_TTL", 300))          # seconds
+MAX_CAROUSEL_ITEMS = int(os.getenv("MAX_CAROUSEL", 10))
+PROXY = os.getenv("SCRAPER_PROXY", "")                 # optional
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
+# ─────────────────────────────────────────────
+# Cache (thread-safe, TTL-based)
+# ─────────────────────────────────────────────
+@dataclass
+class CacheEntry:
+    data: dict
+    expires_at: float
 
-def extract_media_info(url: str) -> dict:
-    """Extract media info - PHOTOS + VIDEOS with AUDIO both working"""
-    
-    if url in _cache:
-        return _cache[url]
-    
-    print(f"📥 Processing: {url}")
-    
-    ydl_opts = {
+_cache: dict[str, CacheEntry] = {}
+_cache_lock = threading.Lock()
+
+def cache_get(key: str) -> Optional[dict]:
+    with _cache_lock:
+        entry = _cache.get(key)
+        if entry and time.time() < entry.expires_at:
+            return entry.data
+        _cache.pop(key, None)
+        return None
+
+def cache_set(key: str, data: dict) -> None:
+    with _cache_lock:
+        _cache[key] = CacheEntry(data=data, expires_at=time.time() + CACHE_TTL)
+
+def cache_purge_expired() -> int:
+    now = time.time()
+    with _cache_lock:
+        expired = [k for k, v in _cache.items() if now >= v.expires_at]
+        for k in expired:
+            del _cache[k]
+        return len(expired)
+
+# ─────────────────────────────────────────────
+# Validation
+# ─────────────────────────────────────────────
+_INSTAGRAM_PATTERN = re.compile(
+    r"^https?://(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+"
+)
+
+def is_valid_instagram_url(url: str) -> bool:
+    return bool(_INSTAGRAM_PATTERN.search(url))
+
+def sanitize_url(url: str) -> str:
+    """Strip tracking params, normalize."""
+    url = url.strip()
+    # Remove query string (tracking pixels, utm, etc.)
+    url = url.split("?")[0].rstrip("/")
+    return url
+
+# ─────────────────────────────────────────────
+# Media Extraction
+# ─────────────────────────────────────────────
+def _ydl_opts() -> dict:
+    opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
         "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
+        "noplaylist": False,
+        "socket_timeout": REQUEST_TIMEOUT,
+        # PROXY (SCRAPERAPI)
+        "proxy":
+            f"http://scraperapi:"{api_key}@proxy-server.scraperapi.com:8001",
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
         },
     }
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-        
-        download_url = ""
-        media_type = "unknown"
-        thumbnail = info.get("thumbnail", "")
-        uploader = info.get("uploader", "") or info.get("uploader_id", "")
-        title = info.get("title", "Instagram Media")
-        ext = ""
-        is_story = "/stories/" in url
-        
-        print(f"📊 URL type: {'Story' if is_story else 'Post/Reel'}")
-        
-        # ============================================
-        # CHECK IF IT'S A PHOTO FIRST
-        # ============================================
-        
-        # Method 1: Check if it's a single photo post
-        if info.get("ext") in ["jpg", "jpeg", "png", "webp"]:
-            download_url = info.get("url", "")
-            media_type = "photo"
-            ext = info.get("ext", "jpg")
-            print(f"📷 PHOTO detected via ext: {ext}")
-        
-        # Method 2: Check display_url (usually photos)
-        if not download_url and info.get("display_url"):
-            download_url = info["display_url"]
+    if PROXY:
+        opts["proxy"] = PROXY
+    return opts
+
+
+def _classify_format(fmt: dict) -> Optional[str]:
+    """Returns 'photo', 'video', or None."""
+    ext = (fmt.get("ext") or "").lower()
+    if ext in ("jpg", "jpeg", "png", "webp"):
+        return "photo"
+    vcodec = fmt.get("vcodec", "none")
+    acodec = fmt.get("acodec", "none")
+    if ext == "mp4" and vcodec != "none" and acodec != "none":
+        return "video"
+    return None
+
+
+def _extract_single(info: dict, source_url: str) -> dict:
+    """Parse one yt-dlp info dict into a clean media item."""
+    media_type = "unknown"
+    download_url = ""
+    ext = ""
+
+    # 1. Direct ext field (photo shortcut)
+    if info.get("ext") in ("jpg", "jpeg", "png", "webp"):
+        download_url = info.get("url", "")
+        media_type = "photo"
+        ext = info["ext"]
+
+    # 2. display_url (Instagram photo)
+    if not download_url and info.get("display_url"):
+        download_url = info["display_url"]
+        media_type = "photo"
+        ext = "jpg"
+
+    # 3. Formats list – pick best MP4+audio or photo
+    if not download_url and info.get("formats"):
+        best_video_url = ""
+        best_height = 0
+
+        for fmt in info["formats"]:
+            kind = _classify_format(fmt)
+            if kind == "photo" and not download_url:
+                download_url = fmt.get("url", "")
+                media_type = "photo"
+                ext = fmt.get("ext", "jpg")
+            elif kind == "video":
+                h = fmt.get("height", 0) or 0
+                if h > best_height:
+                    best_height = h
+                    best_video_url = fmt.get("url", "")
+
+        if best_video_url and not download_url:
+            download_url = best_video_url
+            media_type = "video"
+            ext = "mp4"
+
+    # 4. Fallback: raw url field
+    if not download_url and info.get("url"):
+        raw = info["url"]
+        if any(x in raw.lower() for x in (".jpg", ".jpeg", ".png", ".webp")):
+            download_url = raw
             media_type = "photo"
             ext = "jpg"
-            print(f"📷 PHOTO via display_url")
-        
-        # Method 3: Check entries for carousel (multiple photos)
-        if not download_url and "entries" in info and info["entries"]:
-            for entry in info["entries"]:
-                # Check for photo in entry
-                if entry.get("ext") in ["jpg", "jpeg", "png", "webp"]:
-                    download_url = entry.get("url", "")
-                    media_type = "photo"
-                    ext = entry.get("ext", "jpg")
-                    print(f"📷 PHOTO found in entry")
-                    break
-                elif entry.get("display_url"):
-                    download_url = entry["display_url"]
-                    media_type = "photo"
-                    ext = "jpg"
-                    print(f"📷 PHOTO via entry display_url")
-                    break
-                # Video in entry
-                elif entry.get("ext") in ["mp4", "webm"]:
-                    download_url = entry.get("url", "")
-                    media_type = "video"
-                    ext = entry.get("ext", "mp4")
-                    print(f"🎬 VIDEO found in entry")
-                    break
-        
-        # ============================================
-        # VIDEO DETECTION (with audio)
-        # ============================================
-        if not download_url and "formats" in info:
-            # Look for MP4 with audio
-            best_mp4 = None
-            best_height = 0
-            
-            for fmt in info["formats"]:
-                fmt_ext = fmt.get("ext", "").lower()
-                has_video = fmt.get("vcodec") != "none"
-                has_audio = fmt.get("acodec") != "none"
-                height = fmt.get("height", 0) or 0
-                
-                # PHOTO format
-                if fmt_ext in ["jpg", "jpeg", "png", "webp"]:
-                    if not download_url:
-                        download_url = fmt.get("url", "")
-                        media_type = "photo"
-                        ext = fmt_ext
-                        print(f"📷 PHOTO from formats: {fmt_ext}")
-                
-                # VIDEO with AUDIO
-                elif fmt_ext == "mp4" and has_video and has_audio:
-                    if height > best_height:
-                        best_height = height
-                        best_mp4 = fmt.get("url", "")
-                        print(f"🎬 Found MP4 with AUDIO: {height}p")
-            
-            if best_mp4 and not download_url:
-                download_url = best_mp4
-                media_type = "video"
-                ext = "mp4"
-        
-        # ============================================
-        # Use 'url' field as fallback
-        # ============================================
-        if not download_url and info.get("url"):
-            url_str = info["url"]
-            if any(x in url_str.lower() for x in [".jpg", ".jpeg", ".png"]):
-                download_url = url_str
-                media_type = "photo"
-                ext = "jpg"
-                print(f"📷 PHOTO from url field")
-            elif ".mp4" in url_str.lower():
-                download_url = url_str
-                media_type = "video"
-                ext = "mp4"
-                print(f"🎬 VIDEO from url field")
-        
-        # ============================================
-        # Use thumbnail as last resort for photos
-        # ============================================
-        if not download_url and thumbnail:
-            # If thumbnail looks like a photo URL
-            if any(x in thumbnail.lower() for x in [".jpg", ".jpeg", ".png"]):
-                download_url = thumbnail
-                media_type = "photo"
-                ext = "jpg"
-                print(f"📷 PHOTO from thumbnail")
-        
-        # Clean up extension
-        if download_url:
-            url_lower = download_url.lower()
-            if any(x in url_lower for x in [".jpg", ".jpeg", ".png", ".webp"]):
-                ext = "jpg"
-                media_type = "photo"
-            elif ".mp4" in url_lower:
-                ext = "mp4"
-                media_type = "video"
-        
-        # Story handling
-        if is_story and media_type in ["photo", "video"]:
-            display_type = "story"
-        else:
-            display_type = media_type
-        
-        result = {
-            "success": True,
-            "title": title[:200],
-            "thumbnail": thumbnail,
-            "download_url": download_url,
-            "media_type": display_type,
-            "uploader": uploader,
-            "ext": ext,
-            "has_audio": media_type == "video"
+        elif ".mp4" in raw.lower():
+            download_url = raw
+            media_type = "video"
+            ext = "mp4"
+
+    # 5. Last resort: thumbnail
+    thumb = info.get("thumbnail", "")
+    if not download_url and thumb:
+        download_url = thumb
+        media_type = "photo"
+        ext = "jpg"
+
+    # Override story classification
+    if "/stories/" in source_url and media_type in ("photo", "video"):
+        media_type = "story_" + media_type
+
+    return {
+        "download_url": download_url,
+        "media_type": media_type,
+        "ext": ext,
+        "thumbnail": thumb,
+        "title": (info.get("title") or "Instagram Media")[:200],
+        "uploader": info.get("uploader") or info.get("uploader_id", ""),
+        "has_audio": media_type in ("video", "story_video"),
+        "width": info.get("width"),
+        "height": info.get("height"),
+        "duration": info.get("duration"),
+    }
+
+
+def extract_media(url: str) -> dict:
+    """
+    Main extraction entry point.
+    Returns:
+        {
+            success: bool,
+            items: [ { download_url, media_type, ext, ... }, ... ],
+            count: int,
+            cached: bool,
         }
-        
-        print(f"📤 FINAL: type={display_type}, ext={ext}, has_audio={media_type == 'video'}")
-        print(f"🔗 URL: {download_url[:100] if download_url else 'None'}")
-        
-        if not download_url:
-            print("❌ WARNING: No download URL found!")
-        
-        _cache[url] = result
-        return result
-        
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        raise e
+    """
+    cached = cache_get(url)
+    if cached:
+        cached["cached"] = True
+        return cached
 
-
-@app.route("/download", methods=["POST"])
-def download():
-    data = request.get_json()
-    if not data or "url" not in data:
-        return jsonify({"success": False, "error": "Missing URL"}), 400
-    
-    url = data["url"].strip()
-    if not url:
-        return jsonify({"success": False, "error": "URL empty"}), 400
-    
-    if not is_instagram_url(url):
-        return jsonify({"success": False, "error": "Invalid Instagram URL"}), 422
-    
     try:
-        result = extract_media_info(url)
-        if not result.get("download_url"):
-            return jsonify({"success": False, "error": "No media found. Make sure the post is public."}), 404
-        return jsonify(result), 200
+        with yt_dlp.YoutubeDL(_ydl_opts()) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except yt_dlp.utils.DownloadError as e:
+        msg = str(e)
+        if "Private" in msg or "login" in msg.lower():
+            raise MediaError("This post is private or requires login.", code=403)
+        if "not found" in msg.lower() or "404" in msg:
+            raise MediaError("Post not found or has been deleted.", code=404)
+        raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)[:150]}), 500
+        raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
+
+    items = []
+
+    # Carousel / playlist
+    if info.get("entries"):
+        for entry in info["entries"][:MAX_CAROUSEL_ITEMS]:
+            item = _extract_single(entry, url)
+            if item["download_url"]:
+                items.append(item)
+    else:
+        item = _extract_single(info, url)
+        if item["download_url"]:
+            items.append(item)
+
+    result = {
+        "success": True,
+        "items": items,
+        "count": len(items),
+        "cached": False,
+    }
+
+    if items:
+        cache_set(url, result)
+
+    return result
+
+
+# ─────────────────────────────────────────────
+# Custom Error
+# ─────────────────────────────────────────────
+class MediaError(Exception):
+    def __init__(self, message: str, code: int = 500):
+        super().__init__(message)
+        self.code = code
+
+
+# ─────────────────────────────────────────────
+# Request Lifecycle
+# ─────────────────────────────────────────────
+@app.before_request
+def attach_request_id():
+    g.request_id = str(uuid.uuid4())[:8]
+    g.start_time = time.time()
+
+@app.after_request
+def log_request(response):
+    duration = round((time.time() - g.start_time) * 1000, 1)
+    logger.info(
+        "[%s] %s %s → %d (%sms)",
+        g.request_id, request.method, request.path,
+        response.status_code, duration,
+    )
+    response.headers["X-Request-ID"] = g.request_id
+    return response
+
+
+# ─────────────────────────────────────────────
+# Error Handlers
+# ─────────────────────────────────────────────
+@app.errorhandler(429)
+def too_many_requests(e):
+    return jsonify({
+        "success": False,
+        "error": "Rate limit exceeded. Please slow down.",
+        "retry_after": e.description,
+    }), 429
+
+@app.errorhandler(404)
+def not_found(_):
+    return jsonify({"success": False, "error": "Endpoint not found."}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(_):
+    return jsonify({"success": False, "error": "Method not allowed."}), 405
+
+@app.errorhandler(500)
+def internal_error(e):
+    logger.error("Unhandled exception: %s", e, exc_info=True)
+    return jsonify({"success": False, "error": "Internal server error."}), 500
+
+
+# ─────────────────────────────────────────────
+# Routes
+# ─────────────────────────────────────────────
+@app.route("/download", methods=["POST"])
+@limiter.limit("10 per minute")
+def download():
+    data = request.get_json(silent=True)
+    if not data or "url" not in data:
+        return jsonify({"success": False, "error": "Request body must include 'url'."}), 400
+
+    raw_url = str(data["url"]).strip()
+    if not raw_url:
+        return jsonify({"success": False, "error": "URL cannot be empty."}), 400
+    if len(raw_url) > 500:
+        return jsonify({"success": False, "error": "URL too long."}), 400
+
+    url = sanitize_url(raw_url)
+
+    if not is_valid_instagram_url(url):
+        return jsonify({
+            "success": False,
+            "error": "Invalid Instagram URL. Supported: /p/, /reel/, /tv/, /stories/",
+        }), 422
+
+    logger.info("[%s] Downloading: %s", g.request_id, url)
+
+    try:
+        result = extract_media(url)
+    except MediaError as e:
+        return jsonify({"success": False, "error": str(e)}), e.code
+    except Exception as e:
+        logger.exception("[%s] Unexpected error", g.request_id)
+        return jsonify({"success": False, "error": "Unexpected server error."}), 500
+
+    if not result.get("items"):
+        return jsonify({
+            "success": False,
+            "error": "No downloadable media found. The post may be private.",
+        }), 404
+
+    return jsonify(result), 200
 
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "cache_size": len(_cache)}), 200
+    return jsonify({
+        "status": "ok",
+        "cache_size": len(_cache),
+        "timestamp": time.time(),
+    }), 200
 
 
+@app.route("/metrics", methods=["GET"])
+@limiter.exempt
+def metrics():
+    """Basic internal metrics – protect with auth in prod."""
+    token = request.headers.get("X-Admin-Token", "")
+    if token != os.getenv("ADMIN_TOKEN", ""):
+        return jsonify({"error": "Unauthorized"}), 401
+    purged = cache_purge_expired()
+    return jsonify({
+        "cache_active": len(_cache),
+        "cache_purged_this_call": purged,
+        "max_carousel": MAX_CAROUSEL_ITEMS,
+        "cache_ttl_seconds": CACHE_TTL,
+    }), 200
+
+
+# ─────────────────────────────────────────────
+# Entry point
+# ─────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    debug = os.environ.get("FLASK_ENV", "production") == "development"
+    logger.info("Starting Instagram Downloader on port %d (debug=%s)", port, debug)
+    app.run(debug=debug, host="0.0.0.0", port=port)

@@ -164,65 +164,45 @@ def _classify_format(fmt: dict) -> Optional[str]:
 
 
 def _extract_single(info: dict, source_url: str) -> dict:
-    """Parse one yt-dlp info dict into a clean media item."""
     media_type = "unknown"
     download_url = ""
     ext = ""
+    thumb = info.get("thumbnail", "")
 
-    # 1. Direct ext field (photo shortcut)
-    if info.get("ext") in ("jpg", "jpeg", "png", "webp"):
-        download_url = info.get("url", "")
-        media_type = "photo"
-        ext = info["ext"]
+    # Check formats list first - find best video
+    best_video_url = ""
+    best_height = 0
+    photo_url = ""
 
-    # 2. display_url (Instagram photo)
-    if not download_url and info.get("display_url"):
-        download_url = info["display_url"]
-        media_type = "photo"
-        ext = "jpg"
-
-    # 3. Formats list – pick best MP4+audio or photo
-    if not download_url and info.get("formats"):
-        best_video_url = ""
-        best_height = 0
-
+    if info.get("formats"):
         for fmt in info["formats"]:
             kind = _classify_format(fmt)
-            if kind == "photo" and not download_url:
-                download_url = fmt.get("url", "")
-                media_type = "photo"
-                ext = fmt.get("ext", "jpg")
+            if kind == "photo" and not photo_url:
+                photo_url = fmt.get("url", "")
             elif kind == "video":
                 h = fmt.get("height", 0) or 0
                 if h > best_height:
                     best_height = h
                     best_video_url = fmt.get("url", "")
 
-        if best_video_url and not download_url:
-            download_url = best_video_url
-            media_type = "video"
-            ext = "mp4"
-
-    # 4. Fallback: raw url field
-    if not download_url and info.get("url"):
-        raw = info["url"]
-        if any(x in raw.lower() for x in (".jpg", ".jpeg", ".png", ".webp")):
-            download_url = raw
-            media_type = "photo"
-            ext = "jpg"
-        elif ".mp4" in raw.lower():
-            download_url = raw
-            media_type = "video"
-            ext = "mp4"
-
-    # 5. Last resort: thumbnail
-    thumb = info.get("thumbnail", "")
-    if not download_url and thumb:
+    # Video ko priority do
+    if best_video_url:
+        download_url = best_video_url
+        media_type = "video"
+        ext = "mp4"
+    elif photo_url:
+        download_url = photo_url
+        media_type = "photo"
+        ext = "jpg"
+    elif info.get("display_url"):
+        download_url = info["display_url"]
+        media_type = "photo"
+        ext = "jpg"
+    elif thumb:
         download_url = thumb
         media_type = "photo"
         ext = "jpg"
 
-    # Override story classification
     if "/stories/" in source_url and media_type in ("photo", "video"):
         media_type = "story_" + media_type
 
@@ -238,7 +218,6 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "height": info.get("height"),
         "duration": info.get("duration"),
     }
-
 
 def extract_media(url: str) -> dict:
     """
@@ -314,13 +293,13 @@ def attach_request_id():
 
 @app.after_request
 def log_request(response):
-    duration = round((time.time() - g.start_time) * 1000, 1)
+    duration = round((time.time() - getattr(g, 'start_time', time.time())) * 1000, 1)
     logger.info(
         "[%s] %s %s → %d (%sms)",
-        g.request_id, request.method, request.path,
+        getattr(g, 'request_id', 'unknown'), request.method, request.path,
         response.status_code, duration,
     )
-    response.headers["X-Request-ID"] = g.request_id
+    response.headers["X-Request-ID"] = getattr(g, 'request_id', 'unknown')
     return response
 
 

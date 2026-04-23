@@ -25,6 +25,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional
 from dotenv import load_dotenv
 
+
 load_dotenv()
 # ─────────────────────────────────────────────
 # Logging
@@ -43,6 +44,12 @@ logger = logging.getLogger(__name__)
 # App & Rate Limiter
 # ─────────────────────────────────────────────
 app = Flask(__name__)
+import os
+# Startup check
+if os.path.exists("/etc/secrets/cookies.txt"):
+    logger.info("✅ cookies.txt FOUND at /etc/secrets/cookies.txt")
+else:
+    logger.warning("❌ cookies.txt NOT FOUND at /etc/secrets/cookies.txt")
 CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
 
 limiter = Limiter(
@@ -60,6 +67,7 @@ MAX_CAROUSEL_ITEMS = int(os.getenv("MAX_CAROUSEL", 10))
 api_key= os.getenv("SCRAPER_API_KEY")   
 PROXY = f"http://scraperapi:{api_key}@proxy-server.scraperapi.com:8001" if api_key else ""              # optional
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
+
 
 # ─────────────────────────────────────────────
 # Cache (thread-safe, TTL-based)
@@ -123,12 +131,8 @@ def _ydl_opts() -> dict:
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "nocheckcertificate": True,
-        # ✅ 403 FIX
-        "extractor_args": {
-            "instagram": {
-                "include_feed_videos": True,
-            }
-        },
+        # ✅ COOKIES ADD KARO
+        "cookiefile": "cookies.txt",
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "

@@ -858,8 +858,8 @@
   const ext = (item.ext || "").toLowerCase();
   const mtype = (item.media_type || "").toLowerCase();
 
-  const isPhoto = mtype.includes("image") || mtype === "photo" || /\.(jpg|jpeg|png|webp|gif)/.test(url) || ext === "jpg" || ext === "jpeg" || ext === "png";
-  const isVideo = mtype.includes("video") || /\.(mp4|webm|mov|m4v)/.test(url) || ext === "mp4" || ext === "webm";
+  const isVideo = mtype.includes("video") || ext === "mp4" || ext === "webm" || /\.(mp4|webm|mov|m4v)/.test(url);
+  const isPhoto = !isVideo && (mtype === "photo" || mtype.includes("image") || ext === "jpg" || ext === "jpeg" || ext === "png" || /\.(jpg|jpeg|png|webp|gif)/.test(url));
 
   videoWrap.style.display = "none";
   photoWrap.style.display = "none";
@@ -872,7 +872,7 @@
     photoWrap.style.display = "block";
     dl.download = "instaget_photo.jpg";
     dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
-  } else if (isVideo || item.download_url) {
+  } else if (isVideo) {
     videoPlayer.src = item.download_url;
     videoWrap.style.display = "block";
     document.getElementById("videoBadge").textContent = "🎬 VIDEO";

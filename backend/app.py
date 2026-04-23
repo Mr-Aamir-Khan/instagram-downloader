@@ -8,9 +8,10 @@ Features:
 - Request logging
 - Cache with TTL
 - Health + metrics endpoint
+- Proxy media endpoint (CORS fix)
 """
 
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, Response
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -21,12 +22,14 @@ import time
 import uuid
 import logging
 import threading
-from dataclasses import dataclass, asdict, field
+import requests as req
+from dataclasses import dataclass, field
 from typing import Optional
 from dotenv import load_dotenv
 
 
 load_dotenv()
+
 # ─────────────────────────────────────────────
 # Logging
 # ─────────────────────────────────────────────
@@ -41,17 +44,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────
-# App & Rate Limiter
+# App & CORS
 # ─────────────────────────────────────────────
 app = Flask(__name__)
-import os
+
 # Startup check
 if os.path.exists("/etc/secrets/cookies.txt"):
     logger.info("✅ cookies.txt FOUND at /etc/secrets/cookies.txt")
 else:
     logger.warning("❌ cookies.txt NOT FOUND at /etc/secrets/cookies.txt")
-CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
 
+# ✅ CORS hardcoded - sab origins allow
+CORS(app, origins="*", supports_credentials=False)
+
+# ─────────────────────────────────────────────
+# Rate Limiter
+# ─────────────────────────────────────────────
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
@@ -62,12 +70,11 @@ limiter = Limiter(
 # ─────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────
-CACHE_TTL = int(os.getenv("CACHE_TTL", 300))          # seconds
+CACHE_TTL = int(os.getenv("CACHE_TTL", 300))
 MAX_CAROUSEL_ITEMS = int(os.getenv("MAX_CAROUSEL", 10))
-api_key= os.getenv("SCRAPER_API_KEY")   
-PROXY = f"http://scraperapi:{api_key}@proxy-server.scraperapi.com:8001" if api_key else ""              # optional
+api_key = os.getenv("SCRAPER_API_KEY")
+PROXY = f"http://scraperapi:{api_key}@proxy-server.scraperapi.com:8001" if api_key else ""
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
-
 
 # ─────────────────────────────────────────────
 # Cache (thread-safe, TTL-based)
@@ -111,9 +118,7 @@ def is_valid_instagram_url(url: str) -> bool:
     return bool(_INSTAGRAM_PATTERN.search(url))
 
 def sanitize_url(url: str) -> str:
-    """Strip tracking params, normalize."""
     url = url.strip()
-    # Remove query string (tracking pixels, utm, etc.)
     url = url.split("?")[0].rstrip("/")
     return url
 
@@ -131,13 +136,12 @@ def _ydl_opts() -> dict:
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "nocheckcertificate": True,
-        # ✅ COOKIES ADD KARO
-        "cookiefile": "cookies.txt",
+        "cookiefile": "/etc/secrets/cookies.txt",
         "http_headers": {
             "User-Agent": (
-                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
-                "AppleWebKit/605.1.15 (KHTML, like Gecko) "
-                "Version/17.0 Mobile/15E148 Safari/604.1"
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
             ),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
@@ -152,7 +156,6 @@ def _ydl_opts() -> dict:
 
 
 def _classify_format(fmt: dict) -> Optional[str]:
-    """Returns 'photo', 'video', or None."""
     ext = (fmt.get("ext") or "").lower()
     if ext in ("jpg", "jpeg", "png", "webp"):
         return "photo"
@@ -169,7 +172,6 @@ def _extract_single(info: dict, source_url: str) -> dict:
     ext = ""
     thumb = info.get("thumbnail", "")
 
-    # Check formats list first - find best video
     best_video_url = ""
     best_height = 0
     photo_url = ""
@@ -185,7 +187,7 @@ def _extract_single(info: dict, source_url: str) -> dict:
                     best_height = h
                     best_video_url = fmt.get("url", "")
 
-    # Video ko priority do
+    # ✅ Video ko priority
     if best_video_url:
         download_url = best_video_url
         media_type = "video"
@@ -219,17 +221,8 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "duration": info.get("duration"),
     }
 
+
 def extract_media(url: str) -> dict:
-    """
-    Main extraction entry point.
-    Returns:
-        {
-            success: bool,
-            items: [ { download_url, media_type, ext, ... }, ... ],
-            count: int,
-            cached: bool,
-        }
-    """
     cached = cache_get(url)
     if cached:
         cached["cached"] = True
@@ -240,9 +233,10 @@ def extract_media(url: str) -> dict:
             info = ydl.extract_info(url, download=False)
     except yt_dlp.utils.DownloadError as e:
         msg = str(e)
-        if "Private" in msg or "login" in msg.lower():
+        msg_lower = msg.lower()
+        if "private" in msg_lower or "login" in msg_lower or "403" in msg or "forbidden" in msg_lower:
             raise MediaError("This post is private or requires login.", code=403)
-        if "not found" in msg.lower() or "404" in msg:
+        if "not found" in msg_lower or "404" in msg:
             raise MediaError("Post not found or has been deleted.", code=404)
         raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
     except Exception as e:
@@ -250,7 +244,6 @@ def extract_media(url: str) -> dict:
 
     items = []
 
-    # Carousel / playlist
     if info.get("entries"):
         for entry in info["entries"][:MAX_CAROUSEL_ITEMS]:
             item = _extract_single(entry, url)
@@ -293,6 +286,7 @@ def attach_request_id():
 
 @app.after_request
 def log_request(response):
+    # ✅ getattr se crash nahi hoga
     duration = round((time.time() - getattr(g, 'start_time', time.time())) * 1000, 1)
     logger.info(
         "[%s] %s %s → %d (%sms)",
@@ -332,8 +326,7 @@ def internal_error(e):
 # Routes
 # ─────────────────────────────────────────────
 @app.route("/download", methods=["POST"])
-@limiter.limit("10 per minute")
-@limiter.exempt
+@limiter.limit("10 per minute")  # ✅ Rate limit wapas
 def download():
     data = request.get_json(silent=True)
     if not data or "url" not in data:
@@ -372,7 +365,30 @@ def download():
     return jsonify(result), 200
 
 
+@app.route("/proxy-media", methods=["GET"])
+@limiter.exempt
+def proxy_media():
+    """✅ Instagram CDN images/videos proxy - CORS fix"""
+    media_url = request.args.get("url", "")
+    if not media_url:
+        return jsonify({"error": "URL required"}), 400
+    if "instagram.com" not in media_url and "cdninstagram.com" not in media_url:
+        return jsonify({"error": "Invalid URL"}), 400
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.instagram.com/",
+        }
+        r = req.get(media_url, headers=headers, stream=True, timeout=15)
+        content_type = r.headers.get("Content-Type", "image/jpeg")
+        return Response(r.iter_content(chunk_size=8192), content_type=content_type)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
 @app.route("/health", methods=["GET"])
+@limiter.exempt  # ✅ Health check rate limit se exempt
 def health():
     return jsonify({
         "status": "ok",
@@ -384,7 +400,6 @@ def health():
 @app.route("/metrics", methods=["GET"])
 @limiter.exempt
 def metrics():
-    """Basic internal metrics – protect with auth in prod."""
     token = request.headers.get("X-Admin-Token", "")
     if token != os.getenv("ADMIN_TOKEN", ""):
         return jsonify({"error": "Unauthorized"}), 401

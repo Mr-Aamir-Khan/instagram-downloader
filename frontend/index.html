@@ -66,9 +66,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    .bg-mesh {
-      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
-    }
+    .bg-mesh { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
     .bg-mesh::before {
       content: ''; position: absolute;
       width: 700px; height: 700px;
@@ -88,36 +86,28 @@
 
     .navbar {
       position: sticky; top: 0; z-index: 100;
-      width: 100%;
-      height: var(--nav-h);
+      width: 100%; height: var(--nav-h);
       background: rgba(8,8,15,0.85);
       backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center;
       transition: background var(--t-slow);
     }
-    [data-theme="light"] .navbar {
-      background: rgba(242,241,248,0.88);
-    }
+    [data-theme="light"] .navbar { background: rgba(242,241,248,0.88); }
     .nav-inner {
       max-width: 900px; width: 100%; margin: 0 auto;
       padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between;
     }
-
     .nav-logo {
       font-family: 'Syne', sans-serif;
       font-size: 1.6rem; font-weight: 800;
       line-height: 1; letter-spacing: -1px;
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent-mid) 50%, var(--accent2) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-decoration: none;
-      cursor: pointer;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-decoration: none; cursor: pointer;
     }
-
     .nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-
     .lang-pill {
       display: flex; background: var(--surface2);
       border: 1px solid var(--border); border-radius: 50px;
@@ -130,12 +120,8 @@
       color: var(--text-muted); transition: all var(--t);
       font-family: 'DM Sans', sans-serif; white-space: nowrap;
     }
-    .lang-btn.active {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-    }
+    .lang-btn.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
     .lang-btn:hover:not(.active) { color: var(--accent); background: rgba(232,54,93,0.08); }
-
     .theme-btn {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 50px; padding: 7px 13px;
@@ -158,8 +144,7 @@
     .hero-text h1 {
       font-family: 'Syne', sans-serif;
       font-size: clamp(1.7rem, 5vw, 2.6rem);
-      font-weight: 800; letter-spacing: -1px; line-height: 1.15;
-      margin-bottom: 10px;
+      font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 10px;
     }
     .hero-text h1 span {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -173,7 +158,6 @@
       transition: background var(--t-slow), border-color var(--t);
     }
     .card:hover { border-color: var(--border-h); }
-
     .input-label {
       font-size: 10px; font-weight: 700;
       letter-spacing: 1.5px; text-transform: uppercase;
@@ -262,8 +246,7 @@
       position: absolute; top: 10px; left: 10px;
       background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
       color: #fff; font-size: 11px; font-weight: 700;
-      padding: 4px 10px; border-radius: 50px;
-      letter-spacing: 0.5px;
+      padding: 4px 10px; border-radius: 50px; letter-spacing: 0.5px;
     }
     .result-info {
       background: var(--surface); padding: 18px 20px 20px;
@@ -303,181 +286,98 @@
     }
     .how-label { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
 
-    /* FAQ / Guide Section */
     .faq-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 28px;
-      margin-top: 32px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 24px; padding: 28px; margin-top: 32px;
     }
     .faq-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 8px;
+      font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+      text-align: center; margin-bottom: 8px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .faq-sub {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 13px;
-      margin-bottom: 28px;
-    }
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-    }
+    .faq-sub { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 28px; }
+    .features-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
     .feature-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 8px;
-      text-align: center;
-      transition: all var(--t);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px 8px; text-align: center; transition: all var(--t);
     }
     .feature-card:hover { border-color: var(--accent); transform: translateY(-2px); }
     .feature-icon { font-size: 24px; display: block; margin-bottom: 6px; }
     .feature-title { font-size: 11px; font-weight: 600; color: var(--text); }
     .divider { height: 1px; background: var(--border); margin: 20px 0; }
-    .guide-sub {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: var(--text);
-    }
+    .guide-sub { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
     .steps-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .step-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: var(--surface2);
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface2); padding: 12px 16px;
+      border-radius: 12px; border: 1px solid var(--border);
     }
     .step-number {
-      width: 30px;
-      height: 30px;
+      width: 30px; height: 30px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 13px;
-      color: #fff;
-      flex-shrink: 0;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; color: #fff; flex-shrink: 0;
     }
     .step-text { font-size: 13px; color: var(--text); line-height: 1.4; }
     .devices-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
     .device-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      padding: 6px 14px;
-      font-size: 12px;
-      color: var(--text-sub);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 50px; padding: 6px 14px; font-size: 12px; color: var(--text-sub);
     }
     .safety-box {
-      background: var(--success-glow);
-      border: 1px solid rgba(0,214,143,0.22);
-      border-radius: 12px;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 20px 0;
+      background: var(--success-glow); border: 1px solid rgba(0,214,143,0.22);
+      border-radius: 12px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px; margin: 20px 0;
     }
     .safety-icon { font-size: 24px; }
     .safety-text { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
     .safety-text strong { color: var(--success); }
     .note-box {
-      background: var(--error-glow);
-      border: 1px solid rgba(255,71,87,0.22);
-      border-radius: 12px;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 20px;
+      background: var(--error-glow); border: 1px solid rgba(255,71,87,0.22);
+      border-radius: 12px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px; margin-top: 20px;
     }
     .note-icon { font-size: 18px; }
     .note-text { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
     .faq-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-    .faq-item {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
+    .faq-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
     .faq-q {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 18px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--text);
-      background: none;
-      border: none;
-      width: 100%;
-      text-align: left;
-      font-family: 'DM Sans', sans-serif;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px;
+      color: var(--text); background: none; border: none; width: 100%;
+      text-align: left; font-family: 'DM Sans', sans-serif;
     }
-    .faq-arrow {
-      font-size: 12px;
-      color: var(--accent);
-      transition: transform 0.2s;
-    }
+    .faq-arrow { font-size: 12px; color: var(--accent); transition: transform 0.2s; }
     .faq-item.open .faq-arrow { transform: rotate(180deg); }
     .faq-a {
-      max-height: 0;
-      overflow: hidden;
-      padding: 0 18px;
-      font-size: 13px;
-      color: var(--text-sub);
-      line-height: 1.6;
+      max-height: 0; overflow: hidden; padding: 0 18px;
+      font-size: 13px; color: var(--text-sub); line-height: 1.6;
       transition: max-height 0.3s ease, padding 0.3s ease;
     }
-    .faq-item.open .faq-a {
-      max-height: 300px;
-      padding: 0 18px 16px 18px;
-    }
+    .faq-item.open .faq-a { max-height: 300px; padding: 0 18px 16px 18px; }
     .lang-content { display: none; }
     .lang-content.active { display: block; }
     .seo-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 26px;
-      margin-top: 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 22px; padding: 26px; margin-top: 16px;
     }
     .seo-block h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.2rem;
-      font-weight: 800;
-      margin-bottom: 12px;
+      font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 12px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .seo-block p { font-size: 13px; color: var(--text-sub); line-height: 1.7; margin-bottom: 10px; }
     footer {
-      font-size: 12px;
-      color: var(--text-muted);
-      text-align: center;
-      padding: 24px;
-      border-top: 1px solid var(--border);
-      margin-top: 40px;
+      font-size: 12px; color: var(--text-muted); text-align: center;
+      padding: 24px; border-top: 1px solid var(--border); margin-top: 40px;
     }
+    .carousel-item-btn {
+      padding: 6px 14px; background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; text-decoration: none;
+      font-size: 13px; font-family: 'DM Sans', sans-serif; transition: all var(--t);
+    }
+    .carousel-item-btn:hover { border-color: var(--accent); color: var(--accent); }
     @media (max-width: 580px) {
       .wrapper { padding: 32px 16px 72px; }
       .features-grid { grid-template-columns: repeat(2, 1fr); }
@@ -486,28 +386,12 @@
       .btn-fetch, .btn-clear.show { width: 100%; justify-content: center; }
       .faq-section { padding: 20px; }
     }
-    .carousel-item-btn {
-  padding: 6px 14px;
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  transition: all var(--t);
-}
-.carousel-item-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
   </style>
 </head>
 <body>
 
 <div class="bg-mesh" aria-hidden="true"></div>
 
-<!-- NAVBAR - Only Logo, Language & Theme -->
 <nav class="navbar">
   <div class="nav-inner">
     <span class="nav-logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">InstaGet</span>
@@ -527,16 +411,12 @@
   </div>
 </nav>
 
-<!-- MAIN CONTENT - Single Scrollable Page -->
 <div class="wrapper">
-
-  <!-- Hero Section -->
   <div class="hero-text">
     <h1>Download Instagram <span>Reels, Photos</span> & Videos</h1>
     <p>Paste any public Instagram link — Reels, Posts, Photos or Stories. Get HD quality instantly, no login needed.</p>
   </div>
 
-  <!-- Input Card -->
   <div class="card">
     <label class="input-label" for="urlInput" id="inputLabel">Paste Instagram Link</label>
     <div class="input-row">
@@ -553,27 +433,24 @@
     </p>
   </div>
 
-  <!-- Loader -->
   <div class="loader-wrap" id="loader">
     <div class="spinner-ring"></div>
     <div class="loader-text" id="loaderText">Fetching…</div>
   </div>
 
-  <!-- Error -->
   <div class="error-box" id="errorBox">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
     <span id="errorText">Something went wrong.</span>
   </div>
 
-  <!-- Result Card -->
   <div class="result-card" id="resultCard">
     <div class="media-area" id="videoWrap" style="display:none;">
       <video id="videoPlayer" controls playsinline preload="metadata"></video>
-      <span class="content-badge" id="videoBadge">VIDEO</span>
+      <span class="content-badge" id="videoBadge">🎬 VIDEO</span>
     </div>
     <div class="media-area" id="photoWrap" style="display:none;">
       <img id="photoDisplay" class="photo-display" alt="Instagram Photo" />
-      <span class="content-badge">PHOTO</span>
+      <span class="content-badge">📷 PHOTO</span>
     </div>
     <div class="thumb-wrap" id="thumbWrap">
       <div class="thumb-placeholder" id="thumbPlaceholder">
@@ -593,33 +470,27 @@
           <span id="dlLinkText">Download</span>
         </a>
       </div>
-      <!-- ✅ Carousel — sirf tab dikhega jab 2+ items hon -->
       <div id="carouselWrap" style="display:none; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
     </div>
   </div>
-  <!-- How It Works -->
+
   <div class="how-it-works">
     <div class="how-step"><div class="how-num">1</div><div class="how-label" id="step1Text">Copy an Instagram link</div></div>
     <div class="how-step"><div class="how-num">2</div><div class="how-label" id="step2Text">Paste above & click Fetch</div></div>
     <div class="how-step"><div class="how-num">3</div><div class="how-label" id="step3Text">Download in HD quality</div></div>
   </div>
 
-  <!-- FAQ / GUIDE SECTION (New Div) -->
   <div class="faq-section">
     <div class="faq-title" id="faqMainTitle">📖 How to Use InstaGet</div>
     <div class="faq-sub" id="faqMainSub">Everything you need to know — Steps, Features & FAQ</div>
 
-    <!-- ENGLISH CONTENT -->
     <div class="lang-content active" id="guide-en">
-      <!-- Features Grid -->
       <div class="features-grid">
         <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD Quality</span></div>
         <div class="feature-card"><span class="feature-icon">🔓</span><span class="feature-title">No Login</span></div>
         <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">All Devices</span></div>
         <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">Fast</span></div>
       </div>
-
-      <!-- Step-by-Step Guide -->
       <p class="guide-sub">⬇️ Step-by-Step Guide</p>
       <div class="steps-container">
         <div class="step-item"><div class="step-number">1</div><div class="step-text">Open Instagram app or website</div></div>
@@ -629,10 +500,7 @@
         <div class="step-item"><div class="step-number">5</div><div class="step-text">Click the "Fetch" button — wait a few seconds</div></div>
         <div class="step-item"><div class="step-number">6</div><div class="step-text">Preview your media, then click "Download" to save to your device</div></div>
       </div>
-
       <div class="divider"></div>
-
-      <!-- Features Details -->
       <p class="guide-sub">✨ Features</p>
       <div class="steps-container">
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Reels Downloader</strong> — Save any Reel with original audio</div></div>
@@ -643,10 +511,7 @@
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>No Watermark</strong> — Clean downloads without any watermarks</div></div>
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>100% Free</strong> — No subscriptions, no hidden charges</div></div>
       </div>
-
       <div class="divider"></div>
-
-      <!-- Supported Devices -->
       <p class="guide-sub">📱 Supported Devices & Browsers</p>
       <div class="devices-list">
         <span class="device-badge">📱 Android</span>
@@ -658,34 +523,27 @@
         <span class="device-badge">🧭 Safari</span>
         <span class="device-badge">🖥️ Edge</span>
       </div>
-
       <div class="safety-box">
         <div class="safety-icon">🔒</div>
         <div class="safety-text"><strong>100% Safe & Secure</strong><br>We never store your data or URLs. Media is served directly from Instagram's servers.</div>
       </div>
-
       <div class="divider"></div>
-
-      <!-- FAQ -->
       <p class="guide-sub">❓ Frequently Asked Questions</p>
       <div class="faq-list">
         <div class="faq-item"><button class="faq-q">Is InstaGet completely free? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes — 100% free. No hidden charges, no subscription, no account required.</div></div>
-        <div class="faq-item"><button class="faq-q">Can I download Instagram Photos? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes! InstaGet supports Photos, Reels, Videos, Carousel posts and Stories. Photos are downloaded as JPG/PNG in original quality.</div></div>
-        <div class="faq-item"><button class="faq-q">Can I download private Instagram content? <span class="faq-arrow">▼</span></button><div class="faq-a">No. Only content from public accounts can be downloaded. Private account content is not accessible.</div></div>
+        <div class="faq-item"><button class="faq-q">Can I download Instagram Photos? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes! InstaGet supports Photos, Reels, Videos, Carousel posts and Stories.</div></div>
+        <div class="faq-item"><button class="faq-q">Can I download private Instagram content? <span class="faq-arrow">▼</span></button><div class="faq-a">No. Only content from public accounts can be downloaded.</div></div>
         <div class="faq-item"><button class="faq-q">What quality will I get? <span class="faq-arrow">▼</span></button><div class="faq-a">We fetch the highest available quality — up to 1080p HD for videos, and original resolution for photos.</div></div>
         <div class="faq-item"><button class="faq-q">Do I need to install anything? <span class="faq-arrow">▼</span></button><div class="faq-a">No installation needed. InstaGet works entirely in your browser on any device.</div></div>
-        <div class="faq-item"><button class="faq-q">Why is my download not working? <span class="faq-arrow">▼</span></button><div class="faq-a">Ensure the link is correct and the account is public. Try copying the link again from the Instagram app.</div></div>
         <div class="faq-item"><button class="faq-q">Does video include audio? <span class="faq-arrow">▼</span></button><div class="faq-a">Yes! All Reels and videos are downloaded with their original audio track.</div></div>
         <div class="faq-item"><button class="faq-q">How long are stories available? <span class="faq-arrow">▼</span></button><div class="faq-a">Instagram stories expire after 24 hours. Download them before they disappear!</div></div>
       </div>
-
       <div class="note-box">
         <div class="note-icon">⚠️</div>
         <div class="note-text"><strong>Reminder:</strong> Only download publicly available content. Respect copyright and always credit creators.</div>
       </div>
     </div>
 
-    <!-- HINDI CONTENT -->
     <div class="lang-content" id="guide-hi">
       <div class="features-grid">
         <div class="feature-card"><span class="feature-icon">🎥</span><span class="feature-title">HD क्वालिटी</span></div>
@@ -693,7 +551,6 @@
         <div class="feature-card"><span class="feature-icon">📱</span><span class="feature-title">सभी डिवाइस</span></div>
         <div class="feature-card"><span class="feature-icon">⚡</span><span class="feature-title">तेज़</span></div>
       </div>
-
       <p class="guide-sub">⬇️ चरण-दर-चरण गाइड</p>
       <div class="steps-container">
         <div class="step-item"><div class="step-number">1</div><div class="step-text">Instagram ऐप या वेबसाइट खोलें</div></div>
@@ -703,9 +560,7 @@
         <div class="step-item"><div class="step-number">5</div><div class="step-text">"Fetch" बटन क्लिक करें — कुछ सेकंड प्रतीक्षा करें</div></div>
         <div class="step-item"><div class="step-number">6</div><div class="step-text">प्रीव्यू देखें, फिर "Download" क्लिक करें</div></div>
       </div>
-
       <div class="divider"></div>
-
       <p class="guide-sub">✨ विशेषताएं</p>
       <div class="steps-container">
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>Instagram Reels डाउनलोडर</strong> — ऑडियो के साथ रील्स सेव करें</div></div>
@@ -715,9 +570,7 @@
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>बिना वॉटरमार्क</strong> — साफ डाउनलोड</div></div>
         <div class="step-item"><div class="step-number">✓</div><div class="step-text"><strong>100% मुफ्त</strong> — कोई शुल्क नहीं</div></div>
       </div>
-
       <div class="divider"></div>
-
       <p class="guide-sub">📱 सपोर्टेड डिवाइस और ब्राउज़र</p>
       <div class="devices-list">
         <span class="device-badge">📱 एंड्रॉइड</span>
@@ -728,14 +581,11 @@
         <span class="device-badge">🦊 फ़ायरफ़ॉक्स</span>
         <span class="device-badge">🧭 सफारी</span>
       </div>
-
       <div class="safety-box">
         <div class="safety-icon">🔒</div>
         <div class="safety-text"><strong>100% सुरक्षित</strong><br>हम आपका डेटा कभी स्टोर नहीं करते।</div>
       </div>
-
       <div class="divider"></div>
-
       <p class="guide-sub">❓ अक्सर पूछे जाने वाले सवाल</p>
       <div class="faq-list">
         <div class="faq-item"><button class="faq-q">क्या InstaGet पूरी तरह मुफ्त है? <span class="faq-arrow">▼</span></button><div class="faq-a">हाँ — 100% मुफ्त। कोई छुपा शुल्क नहीं।</div></div>
@@ -744,7 +594,6 @@
         <div class="faq-item"><button class="faq-q">वीडियो में ऑडियो आएगा? <span class="faq-arrow">▼</span></button><div class="faq-a">हाँ! सभी Reels और वीडियो मूल ऑडियो के साथ डाउनलोड होते हैं।</div></div>
         <div class="faq-item"><button class="faq-q">क्या कोई सॉफ्टवेयर इंस्टॉल करना होगा? <span class="faq-arrow">▼</span></button><div class="faq-a">नहीं। InstaGet पूरी तरह browser में काम करता है।</div></div>
       </div>
-
       <div class="note-box">
         <div class="note-icon">⚠️</div>
         <div class="note-text"><strong>याद रखें:</strong> केवल पब्लिक कंटेंट डाउनलोड करें। Copyright का सम्मान करें।</div>
@@ -752,14 +601,12 @@
     </div>
   </div>
 
-  <!-- SEO Block -->
   <div class="seo-block">
     <h2>Best Free Instagram Video Downloader Online</h2>
-    <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation. Whether you want to save a funny Reel, a travel photo, or a tutorial video — InstaGet gets it done in seconds.</p>
-    <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download — your file is ready in HD quality.</p>
-    <p>Looking for an Instagram Reel downloader? InstaGet fully supports Reels, Stories and Photos — downloading them in the original HD quality. Works on all devices — Android, iPhone, Windows, and Mac.</p>
+    <p>InstaGet is the fastest and easiest way to download Instagram Reels, Videos, Photos and Stories without any app installation.</p>
+    <p>Our Instagram downloader tool works directly in your browser. No login, no app, no watermarks. Just paste the Instagram post URL and click download.</p>
+    <p>Looking for an Instagram Reel downloader? InstaGet fully supports Reels, Stories and Photos in HD quality. Works on all devices — Android, iPhone, Windows, and Mac.</p>
   </div>
-
 </div>
 
 <footer>
@@ -779,6 +626,12 @@
 
   let lang = "en";
   let loaderTimer = null;
+
+  // ✅ Proxy URL helper - Instagram CDN CORS fix
+  function proxyUrl(url) {
+    if (!url) return "";
+    return `${API_BASE}/proxy-media?url=${encodeURIComponent(url)}`;
+  }
 
   function applyLang(l) {
     lang = l;
@@ -836,97 +689,102 @@
   function showError(msg) { document.getElementById("errorText").textContent = msg; document.getElementById("errorBox").classList.add("visible"); }
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
- function showResult(data) {
-  // ✅ NEW: items array se pehla item lo
-  
-  const item = data.items[0];
+  function showResult(data) {
+    const item = data.items[0];
 
-  const videoWrap = document.getElementById("videoWrap");
-  const photoWrap = document.getElementById("photoWrap");
-  const thumbWrap = document.getElementById("thumbWrap");
-  const videoPlayer = document.getElementById("videoPlayer");
-  const photoDisp = document.getElementById("photoDisplay");
+    const videoWrap = document.getElementById("videoWrap");
+    const photoWrap = document.getElementById("photoWrap");
+    const thumbWrap = document.getElementById("thumbWrap");
+    const videoPlayer = document.getElementById("videoPlayer");
+    const photoDisp = document.getElementById("photoDisplay");
 
-  // ✅ title/uploader ab item se aata hai
-  document.getElementById("resultTitle").textContent = item.title || "Instagram Media";
-  document.getElementById("resultUploader").textContent = item.uploader ? `@${item.uploader}` : "";
+    document.getElementById("resultTitle").textContent = item.title || "Instagram Media";
+    document.getElementById("resultUploader").textContent = item.uploader ? `@${item.uploader}` : "";
 
-  const dl = document.getElementById("downloadLink");
-  dl.href = item.download_url || "#";
+    const dl = document.getElementById("downloadLink");
+    const ext = (item.ext || "").toLowerCase();
+    const mtype = (item.media_type || "").toLowerCase();
+    const rawUrl = item.download_url || "";
+    const urlLower = rawUrl.toLowerCase();
 
-  const url = (item.download_url || "").toLowerCase();
-  const ext = (item.ext || "").toLowerCase();
-  const mtype = (item.media_type || "").toLowerCase();
+    // ✅ Video pehle check hoga
+    const isVideo = mtype.includes("video") || ext === "mp4" || ext === "webm" || /\.(mp4|webm|mov|m4v)/.test(urlLower);
+    const isPhoto = !isVideo && (mtype === "photo" || mtype.includes("image") || ext === "jpg" || ext === "jpeg" || ext === "png" || /\.(jpg|jpeg|png|webp|gif)/.test(urlLower));
 
-  const isVideo = mtype.includes("video") || ext === "mp4" || ext === "webm" || /\.(mp4|webm|mov|m4v)/.test(url);
-  const isPhoto = !isVideo && (mtype === "photo" || mtype.includes("image") || ext === "jpg" || ext === "jpeg" || ext === "png" || /\.(jpg|jpeg|png|webp|gif)/.test(url));
+    videoWrap.style.display = "none";
+    photoWrap.style.display = "none";
+    thumbWrap.style.display = "none";
+    videoPlayer.src = "";
+    photoDisp.src = "";
 
-  videoWrap.style.display = "none";
-  photoWrap.style.display = "none";
-  thumbWrap.style.display = "none";
-  videoPlayer.src = "";
-  photoDisp.src = "";
+    if (isPhoto) {
+      // ✅ Proxy se load karo - CORS fix
+      const proxied = proxyUrl(rawUrl);
+      photoDisp.src = proxied;
+      photoWrap.style.display = "block";
+      dl.href = proxied;
+      dl.download = "instaget_photo.jpg";
+      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
+    } else if (isVideo) {
+      // ✅ Video direct load - proxy se slow hoga
+      videoPlayer.src = rawUrl;
+      videoWrap.style.display = "block";
+      dl.href = rawUrl;
+      dl.download = "instaget_video.mp4";
+      dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
+      videoPlayer.onerror = () => {
+        videoWrap.style.display = "none";
+        showThumbnail(item);
+      };
+    } else {
+      showThumbnail(item);
+    }
 
-  if (isPhoto) {
-    photoDisp.src = item.download_url;
-    photoWrap.style.display = "block";
-    dl.download = "instaget_photo.jpg";
-    dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Photo`;
-  } else if (isVideo) {
-    videoPlayer.src = item.download_url;
-    videoWrap.style.display = "block";
-    document.getElementById("videoBadge").textContent = "🎬 VIDEO";
-    dl.download = "instaget_video.mp4";
-    dl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].dlLink} Video`;
-    videoPlayer.onerror = () => { videoWrap.style.display = "none"; showThumbnail(item); };
-  } else {
-    showThumbnail(item);
+    // ✅ Carousel
+    const carouselWrap = document.getElementById("carouselWrap");
+    if (carouselWrap) {
+      carouselWrap.innerHTML = "";
+      if (data.count > 1) {
+        carouselWrap.style.display = "flex";
+        data.items.forEach((ci, i) => {
+          const a = document.createElement("a");
+          const ciIsVideo = (ci.media_type || "").includes("video") || ci.ext === "mp4";
+          a.href = ciIsVideo ? ci.download_url : proxyUrl(ci.download_url);
+          a.download = `instaget_${i + 1}.${ci.ext || "jpg"}`;
+          a.target = "_blank";
+          a.textContent = `⬇ Item ${i + 1} (${ci.media_type})`;
+          a.className = "carousel-item-btn";
+          carouselWrap.appendChild(a);
+        });
+      } else {
+        carouselWrap.style.display = "none";
+      }
+    }
+
+    document.getElementById("resultCard").classList.add("visible");
+    document.getElementById("clearBtn").classList.add("show");
   }
 
-  // ✅ NEW: Carousel support — agar 1 se zyada items hain
-  const carouselWrap = document.getElementById("carouselWrap");
-  if (carouselWrap) {
-    carouselWrap.innerHTML = "";
-    if (data.count > 1) {
-      carouselWrap.style.display = "flex";
-      data.items.forEach((ci, i) => {
-        const a = document.createElement("a");
-        a.href = ci.download_url;
-        a.download = `instaget_${i + 1}.${ci.ext || "jpg"}`;
-        a.target = "_blank";
-        a.textContent = `⬇ Item ${i + 1} (${ci.media_type})`;
-        a.style.cssText = "padding:6px 12px;background:#333;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;";
-        carouselWrap.appendChild(a);
-      });
+  function showThumbnail(item) {
+    const thumbWrap = document.getElementById("thumbWrap");
+    const placeholder = document.getElementById("thumbPlaceholder");
+    thumbWrap.style.display = "block";
+    const old = thumbWrap.querySelector("img.thumb-img");
+    if (old) old.remove();
+    if (item.thumbnail) {
+      placeholder.style.display = "none";
+      const img = document.createElement("img");
+      img.className = "thumb-img";
+      img.src = proxyUrl(item.thumbnail); // ✅ proxy se
+      img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
+      img.onerror = () => { placeholder.style.display = "flex"; img.remove(); };
+      thumbWrap.insertBefore(img, thumbWrap.firstChild);
     } else {
-      carouselWrap.style.display = "none";
+      placeholder.style.display = "flex";
     }
   }
 
-  document.getElementById("resultCard").classList.add("visible");
-  document.getElementById("clearBtn").classList.add("show");
-}
-
-// showThumbnail mein bhi item lega ab (data nahi)
-function showThumbnail(item) {
-  const thumbWrap = document.getElementById("thumbWrap");
-  const placeholder = document.getElementById("thumbPlaceholder");
-  thumbWrap.style.display = "block";
-  const old = thumbWrap.querySelector("img.thumb-img");
-  if (old) old.remove();
-  if (item.thumbnail) {
-    placeholder.style.display = "none";
-    const img = document.createElement("img");
-    img.className = "thumb-img";
-    img.src = item.thumbnail;
-    img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-    img.onerror = () => { placeholder.style.display = "flex"; img.remove(); };
-    thumbWrap.insertBefore(img, thumbWrap.firstChild);
-  } else {
-    placeholder.style.display = "flex";
-  }
-}
- function hideResult() {
+  function hideResult() {
     document.getElementById("resultCard").classList.remove("visible");
     document.getElementById("videoPlayer").pause();
     document.getElementById("videoPlayer").src = "";
@@ -946,13 +804,17 @@ function showThumbnail(item) {
     const btn = document.getElementById("fetchBtn");
     const t = T[lang];
     if (!url) { showError(t.errEmpty); return; }
-    // ✅ Strong validation
     const igPattern = /instagram\.com\/(p|reel|tv|stories)\/[\w\-]+/;
     if (!igPattern.test(url)) { showError(t.errInvalid); return; }
     btn.disabled = true;
     hideError(); showLoader();
     try {
-      const res = await fetch(`${API_BASE}/download`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }), signal: AbortSignal.timeout(60000) });
+      const res = await fetch(`${API_BASE}/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(60000)
+      });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || `Server error (${res.status})`);
       hideLoader(); showResult(data);

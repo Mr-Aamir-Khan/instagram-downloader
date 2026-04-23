@@ -333,6 +333,7 @@ def internal_error(e):
 # ─────────────────────────────────────────────
 @app.route("/download", methods=["POST"])
 @limiter.limit("10 per minute")
+@limiter.exempt
 def download():
     data = request.get_json(silent=True)
     if not data or "url" not in data:

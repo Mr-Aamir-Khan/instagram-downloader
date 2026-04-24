@@ -151,7 +151,8 @@ def _ydl_opts() -> dict:
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        "format": "best",          # yt-dlp handles everything automatically
+        "format": "best",      # yt-dlp handles everything automatically
+        "allow_unplayable_formats": True,
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "http_headers": {
@@ -196,14 +197,15 @@ def _extract_single(info: dict, source_url: str) -> dict:
     elif url and ext in ("jpg", "jpeg", "png", "webp"):
         download_url = url
         media_type = "photo"
-    elif info.get("display_url"):
-        download_url = info["display_url"]
-        media_type = "photo"
-        ext = "jpg"
-    elif thumb:
-        download_url = thumb
-        media_type = "photo"
-        ext = "jpg"
+    elif not url or media_type == "unknown":    
+        if info.get("display_url"):
+            download_url = info["display_url"]
+            media_type = "photo"
+            ext = "jpg"
+        elif thumb:
+            download_url = thumb
+            media_type = "photo"
+            ext = "jpg"
 
     if "/stories/" in source_url and media_type in ("photo", "video"):
         media_type = "story_" + media_type

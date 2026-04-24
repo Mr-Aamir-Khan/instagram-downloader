@@ -248,6 +248,8 @@ def extract_media(url: str) -> dict:
             raise MediaError("This post is private or requires login.", code=403)
         if any(x in msg_lower for x in ["not found", "404"]):
             raise MediaError("Post not found or deleted.", code=404)
+        if "no video in this post" in msg_lower:
+            raise MediaError("This is a photo post — video not found.", code=422)
         raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
     except Exception as e:
         raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)

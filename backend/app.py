@@ -56,7 +56,7 @@ class MediaError(Exception):
 app = Flask(__name__)
 
 # Startup check
-COOKIE_PATH = os.getenv("COOKIE_FILE", "/etc/secrets/cookies.txt")
+COOKIE_PATH = os.getenv("COOKIE_FILE", "cookies.txt")
 if os.path.exists(COOKIE_PATH):
     logger.info("✅ cookies.txt FOUND at %s", COOKIE_PATH)
 else:

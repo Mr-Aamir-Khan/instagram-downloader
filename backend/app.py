@@ -136,7 +136,7 @@ def _ydl_opts() -> dict:
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "nocheckcertificate": True,
-        "cookiefile": "/etc/secrets/cookies.txt",
+        "cookiefile": "cookies.txt",
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

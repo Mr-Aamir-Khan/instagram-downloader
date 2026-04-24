@@ -208,14 +208,23 @@ def _extract_single(info: dict, source_url: str) -> dict:
     has_audio = False
 
     if info.get("formats"):
-        # Step 1: Pehle format_id "2" dhundho — combined video+audio hota hai
+    # Step 1: "unknown" vcodec wala format = combined video+audio
         for fmt in info["formats"]:
-            if fmt.get("format_id") == "2" and fmt.get("url"):
-                best_video_url = fmt["url"]
+            vcodec = (fmt.get("vcodec") or "").lower()
+            acodec = (fmt.get("acodec") or "").lower()
+            ext = (fmt.get("ext") or "").lower()
+            fmt_url = fmt.get("url", "")
+
+            if (
+                vcodec == "unknown"
+                and acodec == "unknown"
+                and ext == "mp4"
+                and fmt_url
+            ):
+                best_video_url = fmt_url
                 best_height = fmt.get("height", 0) or 0
                 has_audio = True
                 break
-
         # Step 2: Agar "2" nahi mila toh video+audio dono wala format dhundho
         if not best_video_url:
             for fmt in info["formats"]:

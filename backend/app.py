@@ -153,7 +153,7 @@ def _ydl_opts() -> dict:
         "skip_download": True,
         "extract_flat": False,
         # Format 2 = combined video+audio, ya best video + best audio merge
-        "format": "best[ext=mp4]/best",
+        "format": "best",
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "http_headers": {

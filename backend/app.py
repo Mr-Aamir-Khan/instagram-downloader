@@ -26,7 +26,9 @@ import requests as req
 from dataclasses import dataclass, field
 from typing import Optional
 from dotenv import load_dotenv
-
+from app.utils.logger import logger
+import sys
+sys.path.append(".")
 
 load_dotenv()
 
@@ -126,16 +128,14 @@ def sanitize_url(url: str) -> str:
 # Media Extraction
 # ─────────────────────────────────────────────
 def _ydl_opts() -> dict:
+    
     opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-        "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
-        "nocheckcertificate": True,
         "cookiefile": "cookies.txt",
         "http_headers": {
             "User-Agent": (
@@ -231,28 +231,36 @@ def extract_media(url: str) -> dict:
     try:
         with yt_dlp.YoutubeDL(_ydl_opts()) as ydl:
             info = ydl.extract_info(url, download=False)
+        if not info:
+            raise MediaError("No data extracted.", code=500)
+    
     except yt_dlp.utils.DownloadError as e:
         msg = str(e)
         msg_lower = msg.lower()
-        if "private" in msg_lower or "login" in msg_lower or "403" in msg or "forbidden" in msg_lower:
-            raise MediaError("This post is private or requires login.", code=403)
-        if "not found" in msg_lower or "404" in msg:
-            raise MediaError("Post not found or has been deleted.", code=404)
+        if any(x in msg_lower for x in ["private", "login", "forbidden"]):
+            raise MediaError("This post is private or requires login.", 403)
+        if any(x in msg_lower for x in ["not found", "404"]):
+            raise MediaError("Post not found or deleted.", 404)
         raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
     except Exception as e:
         raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
 
     items = []
 
-    if info.get("entries"):
-        for entry in info["entries"][:MAX_CAROUSEL_ITEMS]:
-            item = _extract_single(entry, url)
-            if item["download_url"]:
-                items.append(item)
+    entries = info.get("entries")
+
+    if entries:
+        entries = list(entries)[:MAX_CAROUSEL_ITEMS]
     else:
-        item = _extract_single(info, url)
-        if item["download_url"]:
-            items.append(item)
+        entries = [info]
+
+    for entry in entries:
+        item = _extract_single(entry, url)
+    if item and item.get("download_url"):
+        items.append(item)
+
+    if not items:
+        raise MediaError("No downloadable media found.", 404)
 
     result = {
         "success": True,

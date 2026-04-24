@@ -152,16 +152,10 @@ def _ydl_opts() -> dict:
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        # BUG FIX: best video+audio format properly select karo
-        "format": "bestvideo+bestaudio/best",
-        "postprocessors": [{
-        "key": "FFmpegVideoConvertor",
-        "preferedformat": "mp4",
-                                }],
-        "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
+        # Format 2 = combined video+audio, ya best video + best audio merge
+        "format": "2/bestvideo+bestaudio/best",
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
-        "nocheckcertificate": False,
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -175,7 +169,6 @@ def _ydl_opts() -> dict:
             "Origin": "https://www.instagram.com",
         },
     }
-    # BUG FIX: cookie file sirf tab add karo jab exist kare
     if os.path.exists(COOKIE_PATH):
         opts["cookiefile"] = COOKIE_PATH
     if PROXY:
@@ -202,54 +195,62 @@ def _classify_format(fmt: dict) -> Optional[str]:
         return "video"
 
     # Extension se fallback check
-    if ext in ("mp4", "m4v", "webm", "mov", "ts"):
+    if ext in ("mp4", "m4v", "webm", "mov"):
         return "video"
 
     return None
 
-
 def _extract_single(info: dict, source_url: str) -> dict:
-    """
-    BUG FIX: Video ko sahi se detect karo.
-    yt-dlp merged format mein 'url' directly hoti hai 'formats' list ke alawa.
-    """
-    media_type = "unknown"
-    download_url = ""
-    ext = ""
     thumb = info.get("thumbnail", "")
-
     best_video_url = ""
     best_height = 0
     photo_url = ""
+    has_audio = False
 
-    # ── Pehle direct URL check karo (yt-dlp merged/best format already select kar leta hai)
-    direct_url = info.get("url", "")
-    direct_ext = (info.get("ext") or "").lower()
-    direct_vcodec = info.get("vcodec") or "none"
-
-    if direct_url and direct_vcodec != "none":
-        # Direct video URL mil gayi
-        best_video_url = direct_url
-        best_height = info.get("height", 0) or 0
-
-    elif direct_url and direct_ext in ("mp4", "m4v", "webm", "mov"):
-        best_video_url = direct_url
-        best_height = info.get("height", 0) or 0
-
-    # ── formats list se bhi check karo (agar direct URL nahi mili ya better quality ho)
     if info.get("formats"):
+        # Step 1: Pehle format_id "2" dhundho — combined video+audio hota hai
         for fmt in info["formats"]:
-            kind = _classify_format(fmt)
-            if kind == "photo" and not photo_url:
-                photo_url = fmt.get("url", "")
-            elif kind == "video":
-                h = fmt.get("height", 0) or 0
-                fmt_url = fmt.get("url", "")
-                if h > best_height and fmt_url:
-                    best_height = h
-                    best_video_url = fmt_url
+            if fmt.get("format_id") == "2" and fmt.get("url"):
+                best_video_url = fmt["url"]
+                best_height = fmt.get("height", 0) or 0
+                has_audio = True
+                break
 
-    # ── Priority: video > photo > display_url > thumbnail
+        # Step 2: Agar "2" nahi mila toh video+audio dono wala format dhundho
+        if not best_video_url:
+            for fmt in info["formats"]:
+                ext = (fmt.get("ext") or "").lower()
+                vcodec = fmt.get("vcodec") or "none"
+                acodec = fmt.get("acodec") or "none"
+                fmt_url = fmt.get("url", "")
+
+                # Photo check
+                if ext in ("jpg", "jpeg", "png", "webp"):
+                    if not photo_url:
+                        photo_url = fmt_url
+                    continue
+
+                # Video+Audio combined stream
+                if vcodec != "none" and acodec != "none" and fmt_url:
+                    h = fmt.get("height", 0) or 0
+                    if h > best_height:
+                        best_height = h
+                        best_video_url = fmt_url
+                        has_audio = True
+
+        # Step 3: Sirf video only bhi nahi mila toh video-only le lo
+        if not best_video_url:
+            for fmt in info["formats"]:
+                vcodec = fmt.get("vcodec") or "none"
+                fmt_url = fmt.get("url", "")
+                if vcodec != "none" and fmt_url:
+                    h = fmt.get("height", 0) or 0
+                    if h > best_height:
+                        best_height = h
+                        best_video_url = fmt_url
+                        has_audio = False  # audio nahi hai
+
+    # Priority decide karo
     if best_video_url:
         download_url = best_video_url
         media_type = "video"
@@ -266,6 +267,10 @@ def _extract_single(info: dict, source_url: str) -> dict:
         download_url = thumb
         media_type = "photo"
         ext = "jpg"
+    else:
+        download_url = ""
+        media_type = "unknown"
+        ext = ""
 
     if "/stories/" in source_url and media_type in ("photo", "video"):
         media_type = "story_" + media_type
@@ -277,7 +282,7 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "thumbnail": thumb,
         "title": (info.get("title") or "Instagram Media")[:200],
         "uploader": info.get("uploader") or info.get("uploader_id", ""),
-        "has_audio": media_type in ("video", "story_video"),
+        "has_audio": has_audio,
         "width": info.get("width"),
         "height": info.get("height"),
         "duration": info.get("duration"),

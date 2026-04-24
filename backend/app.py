@@ -23,12 +23,9 @@ import uuid
 import logging
 import threading
 import requests as req
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
-from app.utils.logger import logger
-import sys
-sys.path.append(".")
 
 load_dotenv()
 
@@ -46,17 +43,25 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────
+# Custom Error — PEHLE define karo, baad mein use hoga
+# ─────────────────────────────────────────────
+class MediaError(Exception):
+    def __init__(self, message: str, code: int = 500):
+        super().__init__(message)
+        self.code = code
+
+# ─────────────────────────────────────────────
 # App & CORS
 # ─────────────────────────────────────────────
 app = Flask(__name__)
 
 # Startup check
-if os.path.exists("/etc/secrets/cookies.txt"):
-    logger.info("✅ cookies.txt FOUND at /etc/secrets/cookies.txt")
+COOKIE_PATH = os.getenv("COOKIE_FILE", "/etc/secrets/cookies.txt")
+if os.path.exists(COOKIE_PATH):
+    logger.info("✅ cookies.txt FOUND at %s", COOKIE_PATH)
 else:
-    logger.warning("❌ cookies.txt NOT FOUND at /etc/secrets/cookies.txt")
+    logger.warning("❌ cookies.txt NOT FOUND at %s", COOKIE_PATH)
 
-# ✅ CORS hardcoded - sab origins allow
 CORS(app, origins="*", supports_credentials=False)
 
 # ─────────────────────────────────────────────
@@ -93,7 +98,8 @@ def cache_get(key: str) -> Optional[dict]:
     with _cache_lock:
         entry = _cache.get(key)
         if entry and time.time() < entry.expires_at:
-            return entry.data
+            # BUG FIX: shallow copy karo taaki original dict mutate na ho
+            return dict(entry.data)
         _cache.pop(key, None)
         return None
 
@@ -108,6 +114,19 @@ def cache_purge_expired() -> int:
         for k in expired:
             del _cache[k]
         return len(expired)
+
+# Background thread — har 60 second mein expired cache purge karo
+def _purge_loop():
+    while True:
+        time.sleep(60)
+        try:
+            purged = cache_purge_expired()
+            if purged:
+                logger.info("Cache purge: %d expired entries removed", purged)
+        except Exception:
+            pass
+
+threading.Thread(target=_purge_loop, daemon=True).start()
 
 # ─────────────────────────────────────────────
 # Validation
@@ -128,15 +147,17 @@ def sanitize_url(url: str) -> str:
 # Media Extraction
 # ─────────────────────────────────────────────
 def _ydl_opts() -> dict:
-    
     opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
+        # BUG FIX: best video+audio format properly select karo
+        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best",
+        "format_sort": ["res:1080", "codec:h264", "ext:mp4"],
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
-        "cookiefile": "cookies.txt",
+        "nocheckcertificate": False,
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -150,23 +171,44 @@ def _ydl_opts() -> dict:
             "Origin": "https://www.instagram.com",
         },
     }
+    # BUG FIX: cookie file sirf tab add karo jab exist kare
+    if os.path.exists(COOKIE_PATH):
+        opts["cookiefile"] = COOKIE_PATH
     if PROXY:
         opts["proxy"] = PROXY
     return opts
 
 
 def _classify_format(fmt: dict) -> Optional[str]:
+    """
+    BUG FIX: Pehle video check karo — ext ke saath-saath vcodec bhi dekho.
+    Instagram ke kuch formats mein ext nahi hoti ya m4v/webm hoti hai.
+    """
     ext = (fmt.get("ext") or "").lower()
+    vcodec = fmt.get("vcodec") or "none"
+    acodec = fmt.get("acodec") or "none"
+
+    # Photo formats
     if ext in ("jpg", "jpeg", "png", "webp"):
         return "photo"
-    vcodec = fmt.get("vcodec", "none")
-    acodec = fmt.get("acodec", "none")
-    if ext == "mp4" and vcodec != "none" and acodec != "none":
+
+    # BUG FIX: video ke liye sirf mp4 mat check karo — vcodec pe rely karo
+    # acodec "none" bhi ho sakta hai (video-only stream) — woh bhi video hai
+    if vcodec != "none":
         return "video"
+
+    # Extension se fallback check
+    if ext in ("mp4", "m4v", "webm", "mov", "ts"):
+        return "video"
+
     return None
 
 
 def _extract_single(info: dict, source_url: str) -> dict:
+    """
+    BUG FIX: Video ko sahi se detect karo.
+    yt-dlp merged format mein 'url' directly hoti hai 'formats' list ke alawa.
+    """
     media_type = "unknown"
     download_url = ""
     ext = ""
@@ -176,6 +218,21 @@ def _extract_single(info: dict, source_url: str) -> dict:
     best_height = 0
     photo_url = ""
 
+    # ── Pehle direct URL check karo (yt-dlp merged/best format already select kar leta hai)
+    direct_url = info.get("url", "")
+    direct_ext = (info.get("ext") or "").lower()
+    direct_vcodec = info.get("vcodec") or "none"
+
+    if direct_url and direct_vcodec != "none":
+        # Direct video URL mil gayi
+        best_video_url = direct_url
+        best_height = info.get("height", 0) or 0
+
+    elif direct_url and direct_ext in ("mp4", "m4v", "webm", "mov"):
+        best_video_url = direct_url
+        best_height = info.get("height", 0) or 0
+
+    # ── formats list se bhi check karo (agar direct URL nahi mili ya better quality ho)
     if info.get("formats"):
         for fmt in info["formats"]:
             kind = _classify_format(fmt)
@@ -183,11 +240,12 @@ def _extract_single(info: dict, source_url: str) -> dict:
                 photo_url = fmt.get("url", "")
             elif kind == "video":
                 h = fmt.get("height", 0) or 0
-                if h > best_height:
+                fmt_url = fmt.get("url", "")
+                if h > best_height and fmt_url:
                     best_height = h
-                    best_video_url = fmt.get("url", "")
+                    best_video_url = fmt_url
 
-    # ✅ Video ko priority
+    # ── Priority: video > photo > display_url > thumbnail
     if best_video_url:
         download_url = best_video_url
         media_type = "video"
@@ -233,14 +291,16 @@ def extract_media(url: str) -> dict:
             info = ydl.extract_info(url, download=False)
         if not info:
             raise MediaError("No data extracted.", code=500)
-    
+
+    except MediaError:
+        raise  # apna error re-raise karo
     except yt_dlp.utils.DownloadError as e:
         msg = str(e)
         msg_lower = msg.lower()
-        if any(x in msg_lower for x in ["private", "login", "forbidden"]):
-            raise MediaError("This post is private or requires login.", 403)
+        if any(x in msg_lower for x in ["private", "login", "forbidden", "403"]):
+            raise MediaError("This post is private or requires login.", code=403)
         if any(x in msg_lower for x in ["not found", "404"]):
-            raise MediaError("Post not found or deleted.", 404)
+            raise MediaError("Post not found or deleted.", code=404)
         raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
     except Exception as e:
         raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
@@ -248,19 +308,19 @@ def extract_media(url: str) -> dict:
     items = []
 
     entries = info.get("entries")
-
     if entries:
         entries = list(entries)[:MAX_CAROUSEL_ITEMS]
     else:
         entries = [info]
 
+    # BUG FIX: item append loop ke ANDAR hona chahiye — indentation fix
     for entry in entries:
         item = _extract_single(entry, url)
-    if item and item.get("download_url"):
-        items.append(item)
+        if item and item.get("download_url"):   # ← ye loop ke ANDAR hai
+            items.append(item)
 
     if not items:
-        raise MediaError("No downloadable media found.", 404)
+        raise MediaError("No downloadable media found.", code=404)
 
     result = {
         "success": True,
@@ -269,19 +329,8 @@ def extract_media(url: str) -> dict:
         "cached": False,
     }
 
-    if items:
-        cache_set(url, result)
-
+    cache_set(url, result)
     return result
-
-
-# ─────────────────────────────────────────────
-# Custom Error
-# ─────────────────────────────────────────────
-class MediaError(Exception):
-    def __init__(self, message: str, code: int = 500):
-        super().__init__(message)
-        self.code = code
 
 
 # ─────────────────────────────────────────────
@@ -294,7 +343,6 @@ def attach_request_id():
 
 @app.after_request
 def log_request(response):
-    # ✅ getattr se crash nahi hoga
     duration = round((time.time() - getattr(g, 'start_time', time.time())) * 1000, 1)
     logger.info(
         "[%s] %s %s → %d (%sms)",
@@ -334,7 +382,7 @@ def internal_error(e):
 # Routes
 # ─────────────────────────────────────────────
 @app.route("/download", methods=["POST"])
-@limiter.limit("10 per minute")  # ✅ Rate limit wapas
+@limiter.limit("10 per minute")
 def download():
     data = request.get_json(silent=True)
     if not data or "url" not in data:
@@ -364,39 +412,49 @@ def download():
         logger.exception("[%s] Unexpected error", g.request_id)
         return jsonify({"success": False, "error": "Unexpected server error."}), 500
 
-    if not result.get("items"):
-        return jsonify({
-            "success": False,
-            "error": "No downloadable media found. The post may be private.",
-        }), 404
-
     return jsonify(result), 200
 
 
 @app.route("/proxy-media", methods=["GET"])
 @limiter.exempt
 def proxy_media():
-    """✅ Instagram CDN images/videos proxy - CORS fix"""
-    media_url = request.args.get("url", "")
+    """Instagram CDN images/videos proxy — CORS fix"""
+    from urllib.parse import urlparse
+
+    media_url = request.args.get("url", "").strip()
     if not media_url:
         return jsonify({"error": "URL required"}), 400
-    if "instagram.com" not in media_url and "cdninstagram.com" not in media_url:
-        return jsonify({"error": "Invalid URL"}), 400
+
+    # BUG FIX: proper domain check — substring match bypass hota tha
+    try:
+        parsed = urlparse(media_url)
+        netloc = parsed.netloc.lower()
+        allowed = ("instagram.com", "cdninstagram.com", "fbcdn.net")
+        if not any(netloc == d or netloc.endswith("." + d) for d in allowed):
+            return jsonify({"error": "Invalid URL"}), 400
+    except Exception:
+        return jsonify({"error": "Malformed URL"}), 400
 
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": "https://www.instagram.com/",
         }
-        r = req.get(media_url, headers=headers, stream=True, timeout=15)
-        content_type = r.headers.get("Content-Type", "image/jpeg")
-        return Response(r.iter_content(chunk_size=8192), content_type=content_type)
+        # BUG FIX: context manager use karo — connection leak fix
+        with req.get(media_url, headers=headers, stream=True, timeout=15) as r:
+            content_type = r.headers.get("Content-Type", "image/jpeg")
+            # Content chunked yield karo
+            def generate():
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        yield chunk
+            return Response(generate(), content_type=content_type)
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 
 
 @app.route("/health", methods=["GET"])
-@limiter.exempt  # ✅ Health check rate limit se exempt
+@limiter.exempt
 def health():
     return jsonify({
         "status": "ok",
@@ -409,7 +467,9 @@ def health():
 @limiter.exempt
 def metrics():
     token = request.headers.get("X-Admin-Token", "")
-    if token != os.getenv("ADMIN_TOKEN", ""):
+    admin_token = os.getenv("ADMIN_TOKEN")
+    # BUG FIX: empty string match nahi hona chahiye
+    if not token or not admin_token or token != admin_token:
         return jsonify({"error": "Unauthorized"}), 401
     purged = cache_purge_expired()
     return jsonify({

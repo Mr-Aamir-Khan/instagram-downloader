@@ -43,7 +43,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────
-# Custom Error — PEHLE define karo, baad mein use hoga
+# Custom Error
 # ─────────────────────────────────────────────
 class MediaError(Exception):
     def __init__(self, message: str, code: int = 500):
@@ -55,7 +55,6 @@ class MediaError(Exception):
 # ─────────────────────────────────────────────
 app = Flask(__name__)
 
-# Startup check
 COOKIE_PATH = os.getenv("COOKIE_FILE", "cookies.txt")
 if os.path.exists(COOKIE_PATH):
     logger.info("✅ cookies.txt FOUND at %s", COOKIE_PATH)
@@ -98,7 +97,6 @@ def cache_get(key: str) -> Optional[dict]:
     with _cache_lock:
         entry = _cache.get(key)
         if entry and time.time() < entry.expires_at:
-            # BUG FIX: shallow copy karo taaki original dict mutate na ho
             return dict(entry.data)
         _cache.pop(key, None)
         return None
@@ -115,7 +113,6 @@ def cache_purge_expired() -> int:
             del _cache[k]
         return len(expired)
 
-# Background thread — har 60 second mein expired cache purge karo
 def _purge_loop():
     while True:
         time.sleep(60)
@@ -144,7 +141,9 @@ def sanitize_url(url: str) -> str:
     return url
 
 # ─────────────────────────────────────────────
-# Media Extraction
+# yt-dlp options
+# "format": "best" → yt-dlp khud best combined video+audio stream select karta hai
+# Koi manual format loop nahi chahiye
 # ─────────────────────────────────────────────
 def _ydl_opts() -> dict:
     opts = {
@@ -152,8 +151,7 @@ def _ydl_opts() -> dict:
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        # Format 2 = combined video+audio, ya best video + best audio merge
-        "format": "best",
+        "format": "best",          # yt-dlp handles everything automatically
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "http_headers": {
@@ -176,51 +174,32 @@ def _ydl_opts() -> dict:
     return opts
 
 
-def _classify_format(fmt: dict) -> Optional[str]:
-    """
-    BUG FIX: Pehle video check karo — ext ke saath-saath vcodec bhi dekho.
-    Instagram ke kuch formats mein ext nahi hoti ya m4v/webm hoti hai.
-    """
-    ext = (fmt.get("ext") or "").lower()
-    vcodec = fmt.get("vcodec") or "none"
-    acodec = fmt.get("acodec") or "none"
-
-    # Photo formats
-    if ext in ("jpg", "jpeg", "png", "webp"):
-        return "photo"
-
-    # BUG FIX: video ke liye sirf mp4 mat check karo — vcodec pe rely karo
-    # acodec "none" bhi ho sakta hai (video-only stream) — woh bhi video hai
-    if vcodec != "none":
-        return "video"
-
-    # Extension se fallback check
-    if ext in ("mp4", "m4v", "webm", "mov"):
-        return "video"
-
-    return None
+# ─────────────────────────────────────────────
+# Media Extraction — single entry
+# yt-dlp "format": "best" se info["url"] already best stream hota hai
+# Koi format-loop nahi, koi vcodec/acodec parsing nahi
+# ─────────────────────────────────────────────
 def _extract_single(info: dict, source_url: str) -> dict:
     thumb = info.get("thumbnail", "")
-
     download_url = ""
     media_type = "unknown"
     ext = ""
     has_audio = False
 
-    # ✅ DIRECT merged URL (yt-dlp already select karta hai)
-    url = info.get("url")
+    url = info.get("url", "")
     ext = (info.get("ext") or "").lower()
 
-    if url and ext in ("mp4", "m4v", "webm"):
+    if url and ext in ("mp4", "m4v", "webm", "mov"):
         download_url = url
         media_type = "video"
-        has_audio = True
-
+        has_audio = True                      # "best" format = combined stream
+    elif url and ext in ("jpg", "jpeg", "png", "webp"):
+        download_url = url
+        media_type = "photo"
     elif info.get("display_url"):
         download_url = info["display_url"]
         media_type = "photo"
         ext = "jpg"
-
     elif thumb:
         download_url = thumb
         media_type = "photo"
@@ -241,105 +220,11 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "height": info.get("height"),
         "duration": info.get("duration"),
     }
-'''
-def _extract_single(info: dict, source_url: str) -> dict:
-    thumb = info.get("thumbnail", "")
-    best_video_url = ""
-    best_height = 0
-    photo_url = ""
-    has_audio = False
-
-    if info.get("formats"):
-    # Step 1: "unknown" vcodec wala format = combined video+audio
-        for fmt in info["formats"]:
-            vcodec = (fmt.get("vcodec") or "").lower()
-            acodec = (fmt.get("acodec") or "").lower()
-            ext = (fmt.get("ext") or "").lower()
-            fmt_url = fmt.get("url", "")
-
-            if (
-                vcodec == "unknown"
-                and acodec == "unknown"
-                and ext == "mp4"
-                and fmt_url
-            ):
-                best_video_url = fmt_url
-                best_height = fmt.get("height", 0) or 0
-                has_audio = True
-                break
-        # Step 2: Agar "2" nahi mila toh video+audio dono wala format dhundho
-        if not best_video_url:
-            for fmt in info["formats"]:
-                ext = (fmt.get("ext") or "").lower()
-                vcodec = fmt.get("vcodec") or "none"
-                acodec = fmt.get("acodec") or "none"
-                fmt_url = fmt.get("url", "")
-
-                # Photo check
-                if ext in ("jpg", "jpeg", "png", "webp"):
-                    if not photo_url:
-                        photo_url = fmt_url
-                    continue
-
-                # Video+Audio combined stream
-                if vcodec != "none" and acodec != "none" and fmt_url:
-                    h = fmt.get("height", 0) or 0
-                    if h > best_height:
-                        best_height = h
-                        best_video_url = fmt_url
-                        has_audio = True
-
-        # Step 3: Sirf video only bhi nahi mila toh video-only le lo
-        if not best_video_url:
-            for fmt in info["formats"]:
-                vcodec = fmt.get("vcodec") or "none"
-                fmt_url = fmt.get("url", "")
-                if vcodec != "none" and fmt_url:
-                    h = fmt.get("height", 0) or 0
-                    if h > best_height:
-                        best_height = h
-                        best_video_url = fmt_url
-                        has_audio = False  # audio nahi hai
-
-    # Priority decide karo
-    if best_video_url:
-        download_url = best_video_url
-        media_type = "video"
-        ext = "mp4"
-    elif photo_url:
-        download_url = photo_url
-        media_type = "photo"
-        ext = "jpg"
-    elif info.get("display_url"):
-        download_url = info["display_url"]
-        media_type = "photo"
-        ext = "jpg"
-    elif thumb:
-        download_url = thumb
-        media_type = "photo"
-        ext = "jpg"
-    else:
-        download_url = ""
-        media_type = "unknown"
-        ext = ""
-
-    if "/stories/" in source_url and media_type in ("photo", "video"):
-        media_type = "story_" + media_type
-
-    return {
-        "download_url": download_url,
-        "media_type": media_type,
-        "ext": ext,
-        "thumbnail": thumb,
-        "title": (info.get("title") or "Instagram Media")[:200],
-        "uploader": info.get("uploader") or info.get("uploader_id", ""),
-        "has_audio": has_audio,
-        "width": info.get("width"),
-        "height": info.get("height"),
-        "duration": info.get("duration"),
-    }
 
 
+# ─────────────────────────────────────────────
+# Main extraction function — was commented out, now fixed
+# ─────────────────────────────────────────────
 def extract_media(url: str) -> dict:
     cached = cache_get(url)
     if cached:
@@ -353,7 +238,7 @@ def extract_media(url: str) -> dict:
             raise MediaError("No data extracted.", code=500)
 
     except MediaError:
-        raise  # apna error re-raise karo
+        raise
     except yt_dlp.utils.DownloadError as e:
         msg = str(e)
         msg_lower = msg.lower()
@@ -373,10 +258,9 @@ def extract_media(url: str) -> dict:
     else:
         entries = [info]
 
-    # BUG FIX: item append loop ke ANDAR hona chahiye — indentation fix
     for entry in entries:
         item = _extract_single(entry, url)
-        if item and item.get("download_url"):   # ← ye loop ke ANDAR hai
+        if item and item.get("download_url"):
             items.append(item)
 
     if not items:
@@ -391,7 +275,7 @@ def extract_media(url: str) -> dict:
 
     cache_set(url, result)
     return result
-'''
+
 
 # ─────────────────────────────────────────────
 # Request Lifecycle
@@ -485,7 +369,6 @@ def proxy_media():
     if not media_url:
         return jsonify({"error": "URL required"}), 400
 
-    # BUG FIX: proper domain check — substring match bypass hota tha
     try:
         parsed = urlparse(media_url)
         netloc = parsed.netloc.lower()
@@ -494,27 +377,22 @@ def proxy_media():
             return jsonify({"error": "Invalid URL"}), 400
     except Exception:
         return jsonify({"error": "Malformed URL"}), 400
-    
+
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": "https://www.instagram.com/",
         }
-        # BUG FIX: context manager use karo — connection leak fix
         with req.get(media_url, headers=headers, stream=True, timeout=15) as r:
             content_type = r.headers.get("Content-Type", "image/jpeg")
-            # Content chunked yield karo
             def generate():
                 for chunk in r.iter_content(chunk_size=8192):
                     if chunk:
                         yield chunk
             return Response(generate(), content_type=content_type)
     except Exception as e:
-        logger.exception("[%s] Unexpected error", g.request_id)
-        return jsonify({
-        "success": False,
-        "error": str(e)
-        }), 500
+        logger.exception("[%s] Proxy error", g.request_id)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/health", methods=["GET"])
@@ -532,7 +410,6 @@ def health():
 def metrics():
     token = request.headers.get("X-Admin-Token", "")
     admin_token = os.getenv("ADMIN_TOKEN")
-    # BUG FIX: empty string match nahi hona chahiye
     if not token or not admin_token or token != admin_token:
         return jsonify({"error": "Unauthorized"}), 401
     purged = cache_purge_expired()

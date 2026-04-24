@@ -153,7 +153,7 @@ def _ydl_opts() -> dict:
         "skip_download": True,
         "extract_flat": False,
         # Format 2 = combined video+audio, ya best video + best audio merge
-        "format": "2/bestvideo+bestaudio/best",
+        "format": "best[ext=mp4]/best",
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "http_headers": {
@@ -199,7 +199,49 @@ def _classify_format(fmt: dict) -> Optional[str]:
         return "video"
 
     return None
+def _extract_single(info: dict, source_url: str) -> dict:
+    thumb = info.get("thumbnail", "")
 
+    download_url = ""
+    media_type = "unknown"
+    ext = ""
+    has_audio = False
+
+    # ✅ DIRECT merged URL (yt-dlp already select karta hai)
+    url = info.get("url")
+    ext = (info.get("ext") or "").lower()
+
+    if url and ext in ("mp4", "m4v", "webm"):
+        download_url = url
+        media_type = "video"
+        has_audio = True
+
+    elif info.get("display_url"):
+        download_url = info["display_url"]
+        media_type = "photo"
+        ext = "jpg"
+
+    elif thumb:
+        download_url = thumb
+        media_type = "photo"
+        ext = "jpg"
+
+    if "/stories/" in source_url and media_type in ("photo", "video"):
+        media_type = "story_" + media_type
+
+    return {
+        "download_url": download_url,
+        "media_type": media_type,
+        "ext": ext,
+        "thumbnail": thumb,
+        "title": (info.get("title") or "Instagram Media")[:200],
+        "uploader": info.get("uploader") or info.get("uploader_id", ""),
+        "has_audio": has_audio,
+        "width": info.get("width"),
+        "height": info.get("height"),
+        "duration": info.get("duration"),
+    }
+'''
 def _extract_single(info: dict, source_url: str) -> dict:
     thumb = info.get("thumbnail", "")
     best_video_url = ""
@@ -349,7 +391,7 @@ def extract_media(url: str) -> dict:
 
     cache_set(url, result)
     return result
-
+'''
 
 # ─────────────────────────────────────────────
 # Request Lifecycle

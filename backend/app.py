@@ -494,7 +494,7 @@ def proxy_media():
             return jsonify({"error": "Invalid URL"}), 400
     except Exception:
         return jsonify({"error": "Malformed URL"}), 400
-
+    
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -510,7 +510,11 @@ def proxy_media():
                         yield chunk
             return Response(generate(), content_type=content_type)
     except Exception as e:
-        return jsonify({"error": str(e)}), 502
+        logger.exception("[%s] Unexpected error", g.request_id)
+        return jsonify({
+        "success": False,
+        "error": str(e)
+        }), 500
 
 
 @app.route("/health", methods=["GET"])

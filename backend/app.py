@@ -224,6 +224,51 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "duration": info.get("duration"),
     }
 
+def extract_photo_post(url: str) -> dict:
+    match = re.search(r'/p/([^/]+)', url)
+    if not match:
+        raise MediaError("Invalid post URL", code=422)
+    
+    shortcode = match.group(1)
+    embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.instagram.com/",
+    }
+    
+    resp = req.get(embed_url, headers=headers, timeout=15)
+    if resp.status_code != 200:
+        raise MediaError("Could not fetch post", code=502)
+    
+    html = resp.text
+    
+    img_match = re.search(r'"display_url":"([^"]+)"', html)
+    if not img_match:
+        img_match = re.search(r'<img[^>]+src="(https://[^"]*cdninstagram[^"]+)"', html)
+    
+    if not img_match:
+        raise MediaError("No image found in post", code=404)
+    
+    img_url = img_match.group(1).replace("\\u0026", "&")
+    
+    return {
+        "download_url": img_url,
+        "media_type": "photo",
+        "ext": "jpg",
+        "thumbnail": img_url,
+        "title": "Instagram Photo",
+        "uploader": "",
+        "has_audio": False,
+        "width": None,
+        "height": None,
+        "duration": None,
+    }
+
+
+
 # ─────────────────────────────────────────────
 # Main extraction function — was commented out, now fixed
 # ─────────────────────────────────────────────

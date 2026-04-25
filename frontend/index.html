@@ -374,15 +374,24 @@
     if (isPhotoType(item)) {
       // ── PHOTO ──
       photoDisp.src = proxyUrl(rawUrl);
-      photoDisp.onerror = () => {
-        // proxy fail → thumbnail try karo
+
+// fallback agar proxy fail ho
+photoDisp.onerror = () => {
+    console.log("Proxy failed, trying direct URL...");
+    
+    // direct try
+    photoDisp.src = rawUrl;
+
+    // agar wo bhi fail
+    photoDisp.onerror = () => {
         if (item.thumbnail && item.thumbnail !== rawUrl) {
-          photoDisp.src = proxyUrl(item.thumbnail);
+            photoDisp.src = item.thumbnail;
         } else {
-          photoWrap.style.display = "none";
-          showThumbnail(item);
+            photoWrap.style.display = "none";
+            showThumbnail(item);
         }
-      };
+    };
+};
       photoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Photo`;
 

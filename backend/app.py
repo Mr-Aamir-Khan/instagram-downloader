@@ -1,14 +1,5 @@
 """
 Instagram Downloader - Production Grade
-Features:
-- Rate limiting (per IP + global)
-- Multi-post / carousel support
-- Structured error handling
-- Input validation & sanitization
-- Request logging
-- Cache with TTL
-- Health + metrics endpoint
-- Proxy media endpoint (CORS fix)
 """
 
 from flask import Flask, request, jsonify, g, Response
@@ -26,13 +17,9 @@ import requests as req
 from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
-import requests
 
 load_dotenv()
 
-# ─────────────────────────────────────────────
-# Logging
-# ─────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -43,17 +30,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────
-# Custom Error
-# ─────────────────────────────────────────────
 class MediaError(Exception):
     def __init__(self, message: str, code: int = 500):
         super().__init__(message)
         self.code = code
 
-# ─────────────────────────────────────────────
-# App & CORS
-# ─────────────────────────────────────────────
 app = Flask(__name__)
 
 COOKIE_PATH = os.getenv("COOKIE_FILE", "cookies.txt")
@@ -64,9 +45,6 @@ else:
 
 CORS(app, origins="*", supports_credentials=False)
 
-# ─────────────────────────────────────────────
-# Rate Limiter
-# ─────────────────────────────────────────────
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
@@ -74,18 +52,12 @@ limiter = Limiter(
     storage_uri=os.getenv("REDIS_URL", "memory://"),
 )
 
-# ─────────────────────────────────────────────
-# Config
-# ─────────────────────────────────────────────
 CACHE_TTL = int(os.getenv("CACHE_TTL", 300))
 MAX_CAROUSEL_ITEMS = int(os.getenv("MAX_CAROUSEL", 10))
 api_key = os.getenv("SCRAPER_API_KEY")
 PROXY = f"http://scraperapi:{api_key}@proxy-server.scraperapi.com:8001" if api_key else ""
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
-# ─────────────────────────────────────────────
-# Cache (thread-safe, TTL-based)
-# ─────────────────────────────────────────────
 @dataclass
 class CacheEntry:
     data: dict
@@ -126,9 +98,6 @@ def _purge_loop():
 
 threading.Thread(target=_purge_loop, daemon=True).start()
 
-# ─────────────────────────────────────────────
-# Validation
-# ─────────────────────────────────────────────
 _INSTAGRAM_PATTERN = re.compile(
     r"^https?://(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+"
 )
@@ -141,19 +110,13 @@ def sanitize_url(url: str) -> str:
     url = url.split("?")[0].rstrip("/")
     return url
 
-# ─────────────────────────────────────────────
-# yt-dlp options
-# "format": "best" → yt-dlp khud best combined video+audio stream select karta hai
-# Koi manual format loop nahi chahiye
-# ─────────────────────────────────────────────
 def _ydl_opts() -> dict:
     opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        "format": "best",      # yt-dlp handles everything automatically
-        "allow_unplayable_formats": True,
+        "format": "best",
         "noplaylist": False,
         "socket_timeout": REQUEST_TIMEOUT,
         "http_headers": {
@@ -176,11 +139,6 @@ def _ydl_opts() -> dict:
     return opts
 
 
-# ─────────────────────────────────────────────
-# Media Extraction — single entry
-# yt-dlp "format": "best" se info["url"] already best stream hota hai
-# Koi format-loop nahi, koi vcodec/acodec parsing nahi
-# ─────────────────────────────────────────────
 def _extract_single(info: dict, source_url: str) -> dict:
     thumb = info.get("thumbnail", "")
     download_url = ""
@@ -194,19 +152,18 @@ def _extract_single(info: dict, source_url: str) -> dict:
     if url and ext in ("mp4", "m4v", "webm", "mov"):
         download_url = url
         media_type = "video"
-        has_audio = True                      # "best" format = combined stream
+        has_audio = True
     elif url and ext in ("jpg", "jpeg", "png", "webp"):
         download_url = url
         media_type = "photo"
-    elif not url or media_type == "unknown":    
-        if info.get("display_url"):
-            download_url = info["display_url"]
-            media_type = "photo"
-            ext = "jpg"
-        elif thumb:
-            download_url = thumb
-            media_type = "photo"
-            ext = "jpg"
+    elif info.get("display_url"):
+        download_url = info["display_url"]
+        media_type = "photo"
+        ext = "jpg"
+    elif thumb:
+        download_url = thumb
+        media_type = "photo"
+        ext = "jpg"
 
     if "/stories/" in source_url and media_type in ("photo", "video"):
         media_type = "story_" + media_type
@@ -224,38 +181,40 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "duration": info.get("duration"),
     }
 
+
 def extract_photo_post(url: str) -> dict:
     match = re.search(r'/p/([^/]+)', url)
     if not match:
         raise MediaError("Invalid post URL", code=422)
-    
+
     shortcode = match.group(1)
     embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
-    
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "text/html,application/xhtml+xml",
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://www.instagram.com/",
     }
-    
+
     resp = req.get(embed_url, headers=headers, timeout=15)
     if resp.status_code != 200:
         raise MediaError("Could not fetch post", code=502)
-    
+
     html = resp.text
-    
+
+    # Priority 1: full res (dst-jpg_e15_fr = original full resolution)
     img_match = re.search(
         r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"',
         html
     )
-    # Priority 2: koi bhi 1080w version
+    # Priority 2: 1080x1080 version
     if not img_match:
         img_match = re.search(
             r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"',
             html
         )
-    # Priority 3: pehla t51.82787-15 URL jo mile
+    # Priority 3: pehla t51.82787-15 URL (profile pic t51.2885-19 skip)
     if not img_match:
         img_match = re.search(
             r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"',
@@ -265,9 +224,8 @@ def extract_photo_post(url: str) -> dict:
     if not img_match:
         raise MediaError("No image found in post", code=404)
 
-    # &amp; → & aur \/ → /
+    # &amp; = HTML encoded &
     img_url = img_match.group(1).replace("&amp;", "&").replace("\\/", "/")
-    # ────────────────────────────
 
     return {
         "download_url": img_url,
@@ -282,27 +240,27 @@ def extract_photo_post(url: str) -> dict:
         "duration": None,
     }
 
-# ─────────────────────────────────────────────
-# Main extraction function — was commented out, now fixed
-# ─────────────────────────────────────────────
+
 def extract_media(url: str) -> dict:
     cached = cache_get(url)
     if cached:
         cached["cached"] = True
         return cached
 
-    # Photo post — /p/ URL aur video nahi
-    is_photo_post = bool(re.search(r'/p/', url)) and not re.search(r'/reel/|/tv/', url)
-
     try:
         with yt_dlp.YoutubeDL(_ydl_opts()) as ydl:
             info = ydl.extract_info(url, download=False)
+        if not info:
+            raise MediaError("No data extracted.", code=500)
 
+    except MediaError:
+        raise
     except yt_dlp.utils.DownloadError as e:
-        msg = str(e).lower()
-        
-        # ── Photo post detect ──
-        if "no video in this post" in msg:
+        msg = str(e)
+        msg_lower = msg.lower()
+
+        # Photo post — yt-dlp support nahi karta, embed se nikalo
+        if "no video in this post" in msg_lower:
             try:
                 item = extract_photo_post(url)
                 result = {
@@ -317,17 +275,14 @@ def extract_media(url: str) -> dict:
                 raise
             except Exception as ex:
                 raise MediaError(f"Photo extraction failed: {str(ex)[:200]}", code=502)
-        
-        if any(x in msg for x in ["private", "login", "forbidden", "403"]):
-            raise MediaError("This post is private or requires login.", code=403)
-        if any(x in msg for x in ["not found", "404"]):
-            raise MediaError("Post not found or deleted.", code=404)
-        raise MediaError(f"Could not fetch media: {str(e)[:200]}", code=502)
 
+        if any(x in msg_lower for x in ["private", "login", "forbidden", "403"]):
+            raise MediaError("This post is private or requires login.", code=403)
+        if any(x in msg_lower for x in ["not found", "404"]):
+            raise MediaError("Post not found or deleted.", code=404)
+        raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
     except Exception as e:
         raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
-
-    
 
     items = []
 
@@ -356,9 +311,6 @@ def extract_media(url: str) -> dict:
     return result
 
 
-# ─────────────────────────────────────────────
-# Request Lifecycle
-# ─────────────────────────────────────────────
 @app.before_request
 def attach_request_id():
     g.request_id = str(uuid.uuid4())[:8]
@@ -376,9 +328,6 @@ def log_request(response):
     return response
 
 
-# ─────────────────────────────────────────────
-# Error Handlers
-# ─────────────────────────────────────────────
 @app.errorhandler(429)
 def too_many_requests(e):
     return jsonify({
@@ -401,9 +350,6 @@ def internal_error(e):
     return jsonify({"success": False, "error": "Internal server error."}), 500
 
 
-# ─────────────────────────────────────────────
-# Routes
-# ─────────────────────────────────────────────
 @app.route("/download", methods=["POST"])
 @limiter.limit("10 per minute")
 def download():
@@ -441,7 +387,6 @@ def download():
 @app.route("/proxy-media", methods=["GET"])
 @limiter.exempt
 def proxy_media():
-    """Instagram CDN images/videos proxy — CORS fix"""
     from urllib.parse import urlparse
 
     media_url = request.args.get("url", "").strip()
@@ -500,9 +445,6 @@ def metrics():
     }), 200
 
 
-# ─────────────────────────────────────────────
-# Entry point
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_ENV", "production") == "development"

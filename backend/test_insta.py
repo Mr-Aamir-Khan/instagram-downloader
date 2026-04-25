@@ -1,7 +1,7 @@
 import re
 import requests as req
 
-url = "https://www.instagram.com/p/DXgqf0vAihi/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ=="
+url = "https://www.instagram.com/p/DXQWkrXiG65/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ=="
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -15,10 +15,29 @@ embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
 resp = req.get(embed_url, headers=headers, timeout=15)
 html = resp.text
 
-# t51.82787-15 wale URLs — full URL nikalo (quotes ke beech)
-all_matches = re.findall(r'"(https://[^"]+t51\.82787-15[^"]+)"', html)
+# Priority 1
+img_match = re.search(r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"', html)
+# Priority 2
+if not img_match:
+    img_match = re.search(r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"', html)
+# Priority 3
+if not img_match:
+    img_match = re.search(r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"', html)
 
-print(f"Post image URLs found: {len(all_matches)}\n")
-for i, u in enumerate(all_matches):
-    u = u.replace("\\u0026", "&").replace("\\/", "/")
-    print(f"[{i}] {u}\n")
+if img_match:
+    img_url = img_match.group(1).replace("&amp;", "&").replace("\\/", "/")
+    print(f"✅ Image URL:\n{img_url}\n")
+
+    # Ab ye URL actually accessible hai?
+    r2 = req.get(img_url, headers={"Referer": "https://www.instagram.com/"}, timeout=10)
+    print(f"📶 Image fetch status: {r2.status_code}")
+    print(f"📦 Content-Type: {r2.headers.get('Content-Type')}")
+    print(f"📏 Content-Length: {r2.headers.get('Content-Length')} bytes")
+else:
+    print("❌ No image found")
+
+# Title/uploader bhi check karo
+title_match = re.search(r'"caption":"([^"]{0,200})"', html)
+user_match = re.search(r'"username":"([^"]+)"', html)
+print(f"\n👤 Username: {user_match.group(1) if user_match else 'NOT FOUND'}")
+print(f"📝 Caption: {title_match.group(1)[:80] if title_match else 'NOT FOUND'}")

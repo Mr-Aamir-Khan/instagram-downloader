@@ -245,17 +245,30 @@ def extract_photo_post(url: str) -> dict:
     
     html = resp.text
     
-    # t51.82787-15 = actual post image
-    # t51.2885-19  = profile picture — skip karo
     img_match = re.search(
-        r'(https://[^\s"\'\\]+t51\.82787-15[^\s"\'\\]+\.jpg[^\s"\'\\]*)',
+        r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"',
         html
     )
+    # Priority 2: koi bhi 1080w version
+    if not img_match:
+        img_match = re.search(
+            r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"',
+            html
+        )
+    # Priority 3: pehla t51.82787-15 URL jo mile
+    if not img_match:
+        img_match = re.search(
+            r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"',
+            html
+        )
+
     if not img_match:
         raise MediaError("No image found in post", code=404)
 
-    img_url = img_match.group(1).replace("\\u0026", "&").replace("\\/", "/")
-    
+    # &amp; → & aur \/ → /
+    img_url = img_match.group(1).replace("&amp;", "&").replace("\\/", "/")
+    # ────────────────────────────
+
     return {
         "download_url": img_url,
         "media_type": "photo",
@@ -268,8 +281,6 @@ def extract_photo_post(url: str) -> dict:
         "height": None,
         "duration": None,
     }
-
-
 
 # ─────────────────────────────────────────────
 # Main extraction function — was commented out, now fixed

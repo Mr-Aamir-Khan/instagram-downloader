@@ -17,6 +17,8 @@ import requests as req
 from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
 
@@ -198,7 +200,7 @@ def extract_photo_post(url: str) -> dict:
         "Referer": "https://www.instagram.com/",
     }
 
-    resp = req.get(embed_url, headers=headers, timeout=15)
+    resp = req.get(embed_url, headers=headers, timeout=15, verify=False)
     if resp.status_code != 200:
         raise MediaError("Could not fetch post", code=502)
 

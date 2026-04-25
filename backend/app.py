@@ -26,6 +26,7 @@ import requests as req
 from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
@@ -223,7 +224,6 @@ def _extract_single(info: dict, source_url: str) -> dict:
         "duration": info.get("duration"),
     }
 
-
 # ─────────────────────────────────────────────
 # Main extraction function — was commented out, now fixed
 # ─────────────────────────────────────────────
@@ -233,26 +233,43 @@ def extract_media(url: str) -> dict:
         cached["cached"] = True
         return cached
 
+    # Photo post — /p/ URL aur video nahi
+    is_photo_post = bool(re.search(r'/p/', url)) and not re.search(r'/reel/|/tv/', url)
+
     try:
         with yt_dlp.YoutubeDL(_ydl_opts()) as ydl:
             info = ydl.extract_info(url, download=False)
-        if not info:
-            raise MediaError("No data extracted.", code=500)
 
-    except MediaError:
-        raise
     except yt_dlp.utils.DownloadError as e:
-        msg = str(e)
-        msg_lower = msg.lower()
-        if any(x in msg_lower for x in ["private", "login", "forbidden", "403"]):
+        msg = str(e).lower()
+        
+        # ── Photo post detect ──
+        if "no video in this post" in msg:
+            try:
+                item = extract_photo_post(url)
+                result = {
+                    "success": True,
+                    "items": [item],
+                    "count": 1,
+                    "cached": False,
+                }
+                cache_set(url, result)
+                return result
+            except MediaError:
+                raise
+            except Exception as ex:
+                raise MediaError(f"Photo extraction failed: {str(ex)[:200]}", code=502)
+        
+        if any(x in msg for x in ["private", "login", "forbidden", "403"]):
             raise MediaError("This post is private or requires login.", code=403)
-        if any(x in msg_lower for x in ["not found", "404"]):
+        if any(x in msg for x in ["not found", "404"]):
             raise MediaError("Post not found or deleted.", code=404)
-        if "no video in this post" in msg_lower:
-            raise MediaError("This is a photo post — video not found.", code=422)
-        raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
+        raise MediaError(f"Could not fetch media: {str(e)[:200]}", code=502)
+
     except Exception as e:
         raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
+
+    
 
     items = []
 

@@ -245,14 +245,16 @@ def extract_photo_post(url: str) -> dict:
     
     html = resp.text
     
-    img_match = re.search(r'"display_url":"([^"]+)"', html)
-    if not img_match:
-        img_match = re.search(r'<img[^>]+src="(https://[^"]*cdninstagram[^"]+)"', html)
-    
+    # t51.82787-15 = actual post image
+    # t51.2885-19  = profile picture — skip karo
+    img_match = re.search(
+        r'(https://[^\s"\'\\]+t51\.82787-15[^\s"\'\\]+\.jpg[^\s"\'\\]*)',
+        html
+    )
     if not img_match:
         raise MediaError("No image found in post", code=404)
-    
-    img_url = img_match.group(1).replace("\\u0026", "&")
+
+    img_url = img_match.group(1).replace("\\u0026", "&").replace("\\/", "/")
     
     return {
         "download_url": img_url,

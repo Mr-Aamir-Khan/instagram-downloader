@@ -352,37 +352,62 @@ def internal_error(e):
     logger.error("Unhandled exception: %s", e, exc_info=True)
     return jsonify({"success": False, "error": "Internal server error."}), 500
 
+@app.route("/proxy-media", methods=["GET"])
+@limiter.exempt
+def proxy_media():
+    from urllib.parse import urlparse
 
-@app.route("/download", methods=["POST"])
-@limiter.limit("10 per minute")
-def download():
-    data = request.get_json(silent=True)
-    if not data or "url" not in data:
-        return jsonify({"success": False, "error": "Request body must include 'url'."}), 400
+    media_url = request.args.get("url", "").strip()
+    if not media_url:
+        return jsonify({"error": "URL required"}), 400
 
-    raw_url = str(data["url"]).strip()
-    if not raw_url:
-        return jsonify({"success": False, "error": "URL cannot be empty."}), 400
-    if len(raw_url) > 500:
-        return jsonify({"success": False, "error": "URL too long."}), 400
-
-    url = sanitize_url(raw_url)
-
-    if not is_valid_instagram_url(url):
-        return jsonify({
-            "success": False,
-            "error": "Invalid Instagram URL. Supported: /p/, /reel/, /tv/, /stories/",
-        }), 422
-
-    logger.info("[%s] Downloading: %s", g.request_id, url)
+    # ✅ dl=1 ho to force download karo
+    force_download = request.args.get("dl", "0") == "1"
+    filename = request.args.get("filename", "instaget_media").strip()
 
     try:
-        result = extract_media(url)
-    except MediaError as e:
-        return jsonify({"success": False, "error": str(e)}), e.code
+        parsed = urlparse(media_url)
+        netloc = parsed.netloc.lower()
+        allowed = ("instagram.com", "cdninstagram.com", "fbcdn.net")
+        if not any(netloc == d or netloc.endswith("." + d) for d in allowed):
+            return jsonify({"error": "Invalid URL"}), 400
+    except Exception:
+        return jsonify({"error": "Malformed URL"}), 400
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.instagram.com/",
+        }
+        with req.get(media_url, headers=headers, stream=True, timeout=30) as r:
+            content_type = r.headers.get("Content-Type", "application/octet-stream")
+            content_length = r.headers.get("Content-Length")
+
+            def generate():
+                for chunk in r.iter_content(chunk_size=65536):  # ✅ 64KB chunks (8KB se zyada fast)
+                    if chunk:
+                        yield chunk
+
+            response = Response(generate(), content_type=content_type)
+
+            # ✅ Yeh 2 lines FORCE DOWNLOAD karti hain — blank file ki problem khatam
+            if force_download:
+                response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+                response.headers["Content-Type"] = "application/octet-stream"
+
+            # ✅ Content-Length dene se progress bar bhi dikhega
+            if content_length:
+                response.headers["Content-Length"] = content_length
+
+            # ✅ CORS — frontend se access ke liye
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Length"
+
+            return response
+
     except Exception as e:
-        logger.exception("[%s] Unexpected error", g.request_id)
-        return jsonify({"success": False, "error": "Unexpected server error."}), 500
+        logger.exception("[%s] Proxy error", g.request_id)
+        return jsonify({"success": False, "error": str(e)}), 500
 
     return jsonify(result), 200
 

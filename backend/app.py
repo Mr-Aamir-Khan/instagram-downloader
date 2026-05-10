@@ -45,11 +45,13 @@ if os.path.exists(COOKIE_PATH):
 else:
     logger.warning("❌ cookies.txt NOT FOUND at %s", COOKIE_PATH)
 
-CORS(app, 
-     origins="*", 
+CORS(app,
+     origins="*",
      methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization"],
-     supports_credentials=False)
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     expose_headers=["Content-Disposition", "Content-Length"],
+     supports_credentials=False,
+     automatic_options=True)
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -319,9 +321,19 @@ def extract_media(url: str) -> dict:
 
 
 @app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = app.make_default_options_response()
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return response
+
+@app.before_request
 def attach_request_id():
     g.request_id = str(uuid.uuid4())[:8]
     g.start_time = time.time()
+
 
 @app.after_request
 def log_request(response):

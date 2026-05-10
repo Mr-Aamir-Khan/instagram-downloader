@@ -409,17 +409,9 @@ def proxy_media():
         logger.exception("[%s] Proxy error", g.request_id)
         return jsonify({"success": False, "error": str(e)}), 500
 
-    return jsonify(result), 200
 
 
-@app.route("/proxy-media", methods=["GET"])
-@limiter.exempt
-def proxy_media():
-    from urllib.parse import urlparse
 
-    media_url = request.args.get("url", "").strip()
-    if not media_url:
-        return jsonify({"error": "URL required"}), 400
 
     try:
         parsed = urlparse(media_url)

@@ -507,17 +507,39 @@
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
   // ── FIXED Download Button ──
-  document.getElementById("downloadBtn").addEventListener("click", () => {
-    if (!currentItem) return;
-    const ext = currentItem.ext || (isVideoType(currentItem) ? "mp4" : "jpg");
-    const filename = isVideoType(currentItem)
-      ? `instaget_video.${ext}`
-      : `instaget_photo.${ext}`;
-      const href = `${API_BASE}/proxy-media?url=${encodeURIComponent(currentItem.download_url)}&dl=1&filename=${encodeURIComponent(filename)}`;
-      window.location.href = href;
-      
+ document.getElementById("downloadBtn").addEventListener("click", async () => {
+  if (!currentItem) return;
+  
+  const btn = document.getElementById("downloadBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Fetching...`;
+
+  try {
+    // ✅ Fresh URL fetch karo
+    const instagramUrl = document.getElementById("urlInput").value.trim();
+    const res = await fetch(`${API_BASE}/download`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({url: instagramUrl})
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
     
-  });
+    // ✅ Fresh URL se download karo
+    const item = data.items[0];
+    const ext = item.ext || (isVideoType(item) ? "mp4" : "jpg");
+    const filename = isVideoType(item) ? `instaget_video.${ext}` : `instaget_photo.${ext}`;
+    const href = `${API_BASE}/proxy-media?url=${encodeURIComponent(item.download_url)}&dl=1&filename=${encodeURIComponent(filename)}`;
+    
+    window.location.href = href;
+
+  } catch(err) {
+    showError("Download failed: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> <span id="dlBtnText">Download Video</span>`;
+  }
+});
 
   document.getElementById("clearBtn").addEventListener("click", () => {
     document.getElementById("urlInput").value = "";

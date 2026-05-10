@@ -45,7 +45,11 @@ if os.path.exists(COOKIE_PATH):
 else:
     logger.warning("❌ cookies.txt NOT FOUND at %s", COOKIE_PATH)
 
-CORS(app, origins="*", supports_credentials=False)
+CORS(app, 
+     origins="*", 
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"],
+     supports_credentials=False)
 
 limiter = Limiter(
     key_func=get_remote_address,

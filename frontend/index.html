@@ -514,12 +514,8 @@
       ? `instaget_video.${ext}`
       : `instaget_photo.${ext}`;
       const href = `${API_BASE}/proxy-media?url=${encodeURIComponent(currentItem.download_url)}&dl=1&filename=${encodeURIComponent(filename)}`;
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      window.location.href = href;
+      
     
   });
 

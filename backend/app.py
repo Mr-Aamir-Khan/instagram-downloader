@@ -479,7 +479,38 @@ def metrics():
         "max_carousel": MAX_CAROUSEL_ITEMS,
         "cache_ttl_seconds": CACHE_TTL,
     }), 200
+@app.route("/download", methods=["POST"])
+@limiter.limit("10 per minute")
+def download():
+    data = request.get_json(silent=True)
+    if not data or "url" not in data:
+        return jsonify({"success": False, "error": "Request body must include 'url'."}), 400
 
+    raw_url = str(data["url"]).strip()
+    if not raw_url:
+        return jsonify({"success": False, "error": "URL cannot be empty."}), 400
+    if len(raw_url) > 500:
+        return jsonify({"success": False, "error": "URL too long."}), 400
+
+    url = sanitize_url(raw_url)
+
+    if not is_valid_instagram_url(url):
+        return jsonify({
+            "success": False,
+            "error": "Invalid Instagram URL. Supported: /p/, /reel/, /tv/, /stories/",
+        }), 422
+
+    logger.info("[%s] Downloading: %s", g.request_id, url)
+
+    try:
+        result = extract_media(url)
+    except MediaError as e:
+        return jsonify({"success": False, "error": str(e)}), e.code
+    except Exception as e:
+        logger.exception("[%s] Unexpected error", g.request_id)
+        return jsonify({"success": False, "error": "Unexpected server error."}), 500
+
+    return jsonify(result), 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

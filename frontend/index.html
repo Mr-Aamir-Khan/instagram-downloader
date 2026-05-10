@@ -293,6 +293,7 @@
 
 <script>
   const API_BASE = "https://instagram-downloader-d5y3.onrender.com";
+  
   const LOADER_EN = ["Fetching media info…","Waking up server (~30s first load)…","Extracting URL…","Almost there…"];
   const LOADER_HI = ["जानकारी ला रहे हैं…","Server जगा रहे हैं (~30s)…","URL निकाल रहे हैं…","बस थोड़ा और…"];
 
@@ -308,14 +309,17 @@
     return `${API_BASE}/proxy-media?url=${encodeURIComponent(url)}`;
   }
 
-  // ─── CORE FIX: media_type se decide karo, URL pattern se nahi ───
-  // Backend clearly "photo" ya "video" bhejta hai — usi pe trust karo
+  // ── Force-download proxy URL — backend se Content-Disposition: attachment milta hai ──
+  // Yeh URL seedha <a href download> mein use karo, blob ki zaroorat nahi
+  function forceDownloadUrl(url, filename) {
+    if (!url) return "";
+    return `${API_BASE}/proxy-media?url=${encodeURIComponent(url)}&download=1&filename=${encodeURIComponent(filename)}`;
+  }
+
   function isVideoType(item) {
     const mtype = (item.media_type || "").toLowerCase();
     const ext   = (item.ext || "").toLowerCase();
-    // media_type mein "video" hai → video
     if (mtype.includes("video")) return true;
-    // ext mp4/webm/mov → video
     if (["mp4","webm","mov","m4v"].includes(ext)) return true;
     return false;
   }
@@ -328,25 +332,60 @@
     return false;
   }
 
-  async function downloadViaBlob(rawUrl, filename) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIX: Video ke liye proxy se blob download karo taaki forced save ho
+  //      Photo ke liye bhi same blob approach, ya direct anchor fallback
+  // ─────────────────────────────────────────────────────────────────────────
+  async function downloadMedia(rawUrl, filename) {
     const btn = document.getElementById("downloadBtn");
-    const orig = btn.innerHTML;
+    const origHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].downloading}`;
+
+    // Strategy 1: Proxy se blob fetch karke force-save (best for videos)
     try {
-      const resp = await fetch(proxyUrl(rawUrl));
+      const resp = await fetch(proxyUrl(rawUrl), { mode: "cors" });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const blob = await resp.blob();
+      
+      // Blob URL se <a download> — yeh GUARANTEED download karta hai, play nahi
       const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl; a.download = filename;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-    } catch(err) {
-      showError("Download failed: " + err.message);
-    } finally {
-      btn.disabled = false; btn.innerHTML = orig;
+      triggerAnchorDownload(blobUrl, filename);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+      return;
+    } catch (err) {
+      console.warn("Blob download failed, trying fallback:", err.message);
     }
+
+    // Strategy 2: Fallback — forceDownload param ke saath direct anchor
+    // (works when proxy adds Content-Disposition: attachment header)
+    try {
+      triggerAnchorDownload(forceDownloadUrl(rawUrl, filename), filename);
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+      return;
+    } catch(err2) {
+      console.warn("Anchor fallback also failed:", err2.message);
+    }
+
+    // Strategy 3: Last resort — new tab mein open karo
+    window.open(proxyUrl(rawUrl), "_blank");
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+
+  // Helper: invisible <a> element se download trigger karo
+  function triggerAnchorDownload(href, filename) {
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    // Small delay ke baad remove karo
+    setTimeout(() => document.body.removeChild(a), 500);
   }
 
   function showResult(data) {
@@ -372,31 +411,23 @@
     const rawUrl = item.download_url || "";
 
     if (isPhotoType(item)) {
-      // ── PHOTO ──
       photoDisp.src = proxyUrl(rawUrl);
-
-// fallback agar proxy fail ho
-photoDisp.onerror = () => {
-    console.log("Proxy failed, trying direct URL...");
-    
-    // direct try
-    photoDisp.src = rawUrl;
-
-    // agar wo bhi fail
-    photoDisp.onerror = () => {
-        if (item.thumbnail && item.thumbnail !== rawUrl) {
+      photoDisp.onerror = () => {
+        photoDisp.src = rawUrl;
+        photoDisp.onerror = () => {
+          if (item.thumbnail && item.thumbnail !== rawUrl) {
             photoDisp.src = item.thumbnail;
-        } else {
+          } else {
             photoWrap.style.display = "none";
             showThumbnail(item);
-        }
-    };
-};
+          }
+        };
+      };
       photoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Photo`;
 
     } else if (isVideoType(item)) {
-      // ── VIDEO ──
+      // Preview ke liye direct URL (stream) — download alag button se hoga
       videoPlayer.src = rawUrl;
       videoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Video`;
@@ -406,7 +437,6 @@ photoDisp.onerror = () => {
       };
 
     } else {
-      // ── Unknown fallback ──
       showThumbnail(item);
       document.getElementById("dlBtnText").textContent = T[lang].dlLink;
     }
@@ -420,7 +450,10 @@ photoDisp.onerror = () => {
         const btn = document.createElement("button");
         btn.textContent = `⬇ Item ${i+1} (${ci.media_type})`;
         btn.className = "carousel-item-btn";
-        btn.onclick = () => downloadViaBlob(ci.download_url, `instaget_${i+1}.${ci.ext||"jpg"}`);
+        btn.onclick = () => {
+          const ext = ci.ext || (isVideoType(ci) ? "mp4" : "jpg");
+          downloadMedia(ci.download_url, `instaget_${i+1}.${ext}`);
+        };
         cw.appendChild(btn);
       });
     } else {
@@ -473,11 +506,14 @@ photoDisp.onerror = () => {
   function showError(msg) { document.getElementById("errorText").textContent=msg; document.getElementById("errorBox").classList.add("visible"); }
   function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
+  // ── FIXED Download Button ──
   document.getElementById("downloadBtn").addEventListener("click", () => {
     if (!currentItem) return;
-    const ext = currentItem.ext || "jpg";
-    const filename = isVideoType(currentItem) ? `instaget_video.${ext}` : `instaget_photo.${ext}`;
-    downloadViaBlob(currentItem.download_url, filename);
+    const ext = currentItem.ext || (isVideoType(currentItem) ? "mp4" : "jpg");
+    const filename = isVideoType(currentItem)
+      ? `instaget_video.${ext}`
+      : `instaget_photo.${ext}`;
+    downloadMedia(currentItem.download_url, filename);
   });
 
   document.getElementById("clearBtn").addEventListener("click", () => {

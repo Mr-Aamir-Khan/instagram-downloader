@@ -337,7 +337,7 @@
   //      Photo ke liye bhi same blob approach, ya direct anchor fallback
   // ─────────────────────────────────────────────────────────────────────────
   async function downloadMedia(rawUrl, filename) {
-    const btn = document.getElementById("downloadBtn");
+    document.getElementById("dlBtnText").textContent = `▶ Play & Download Video`;
     const origHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].downloading}`;

@@ -115,7 +115,8 @@ def is_valid_instagram_url(url: str) -> bool:
 
 def sanitize_url(url: str) -> str:
     url = url.strip()
-    url = url.split("?")[0].rstrip("/")
+    # ✅ Query params mat hatao — carousel ke liye zaroor hote hain
+    url = url.rstrip("/")
     return url
 
 def _ydl_opts() -> dict:
@@ -524,7 +525,7 @@ def dl():
     except Exception as e:
         logger.exception("DL error")
         return jsonify({"error": str(e)}), 500
-        
+
 @app.route("/health", methods=["GET"])
 @limiter.exempt
 def health():

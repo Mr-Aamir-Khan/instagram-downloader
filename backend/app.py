@@ -257,7 +257,6 @@ def extract_photo_post(url: str) -> dict:
 
 # ------------------------- GRAPHQL EXTRACTION (Fixes carousel) -------------------------
 def _extract_graphql_node(node: dict) -> Optional[dict]:
-    """Convert a GraphQL media node into our standard item format."""
     typename = node.get("__typename", "")
     if typename == "GraphVideo":
         video_url = node.get("video_url", "")
@@ -291,14 +290,20 @@ def _extract_graphql_node(node: dict) -> Optional[dict]:
             }
     return None
 
-
 def extract_with_graphql(url: str) -> dict:
-    """Extract all media items from an Instagram post using GraphQL endpoint."""
     match = re.search(r'(instagram\.com/(p|reel|tv|stories)/([\w\-]+))', url)
     if not match:
         raise MediaError("Invalid Instagram URL for GraphQL extraction", 400)
 
     shortcode = match.group(3)
+    # Use the newer GraphQL endpoint that still works with cookies
+    api_url = f"https://www.instagram.com/api/graphql"
+
+    # Retrieve a valid query hash (you can hardcode a known working one)
+    # For simplicity, we'll use the embed fallback for photos if GraphQL fails.
+    # But let's attempt the public API first.
+
+    # Alternative: Use the `www.instagram.com/p/{shortcode}/?__a=1&__d=1` with proper headers
     api_url = f"https://www.instagram.com/p/{shortcode}/?__a=1&__d=1"
 
     session = req.Session()
@@ -309,42 +314,54 @@ def extract_with_graphql(url: str) -> dict:
         session.proxies = {"http": PROXY, "https": PROXY}
     session.verify = False
 
-    # Load cookies if available
+    # Load cookies
     if os.path.exists(COOKIE_PATH):
         cj = cookielib.MozillaCookieJar(COOKIE_PATH)
         cj.load(ignore_expires=True)
         session.cookies.update(cj)
 
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
-        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://www.instagram.com/",
+        "X-Requested-With": "XMLHttpRequest",
     }
 
     try:
         resp = session.get(api_url, headers=headers, timeout=REQUEST_TIMEOUT)
+        if resp.status_code != 200:
+            raise MediaError(f"GraphQL endpoint returned {resp.status_code}", 502)
+
+        # Try to parse JSON – Instagram sometimes returns HTML despite Accept header
+        data = resp.json()
+    except json.JSONDecodeError:
+        # Not JSON – likely Instagram blocked us. Fallback to embed method for single photo.
+        logger.warning("GraphQL returned non-JSON, falling back to embed extraction")
+        # Only try embed if it's a single photo (p/ shortcode)
+        if '/p/' in url:
+            item = extract_photo_post(url)
+            return {
+                "success": True,
+                "items": [item],
+                "count": 1,
+                "cached": False,
+            }
+        else:
+            raise MediaError("Failed to fetch media data (GraphQL returned invalid response)", 502)
     except Exception as e:
         raise MediaError(f"GraphQL request failed: {str(e)[:100]}", 502)
 
-    if resp.status_code != 200:
-        raise MediaError(f"GraphQL endpoint returned {resp.status_code}", 502)
-
-    try:
-        data = resp.json()
-    except json.JSONDecodeError:
-        raise MediaError("Invalid JSON from Instagram GraphQL", 502)
-
+    # Rest of your existing GraphQL parsing code (unchanged)
     graphql = data.get("graphql", {})
     media = graphql.get("shortcode_media", {})
     if not media:
-        raise MediaError("No media data found in GraphQL response", 404)
+        # Try to get data from alternative structure
+        media = data.get("shortcode_media", {})
+        if not media:
+            raise MediaError("No media data found in GraphQL response", 404)
 
     items = []
-    # Carousel (sidecar) handling
     if media.get("__typename") == "GraphSidecar":
         edges = media.get("edge_sidecar_to_children", {}).get("edges", [])
         for edge in edges[:MAX_CAROUSEL_ITEMS]:
@@ -353,7 +370,6 @@ def extract_with_graphql(url: str) -> dict:
             if item and item.get("download_url"):
                 items.append(item)
     else:
-        # Single photo/video
         item = _extract_graphql_node(media)
         if item and item.get("download_url"):
             items.append(item)
@@ -368,7 +384,6 @@ def extract_with_graphql(url: str) -> dict:
         "cached": False,
     }
 
-
 # ------------------------- MAIN EXTRACTION WITH FALLBACK -------------------------
 def extract_media(url: str) -> dict:
     cached = cache_get(url)
@@ -376,60 +391,59 @@ def extract_media(url: str) -> dict:
         cached["cached"] = True
         return cached
 
-    # First attempt: yt-dlp (fast, handles reels and videos well)
+    # Step 1: Try yt-dlp (covers most videos, reels, some carousels)
     try:
         with yt_dlp.YoutubeDL(_ydl_opts()) as ydl:
             info = ydl.extract_info(url, download=False)
-        if not info:
-            raise MediaError("No data extracted.", code=500)
+        if info:
+            items = []
+            entries = info.get("entries")
+            if entries:
+                entries = list(entries)[:MAX_CAROUSEL_ITEMS]
+            else:
+                entries = [info]
 
-        items = []
-        entries = info.get("entries")
-        if entries:
-            entries = list(entries)[:MAX_CAROUSEL_ITEMS]
-        else:
-            entries = [info]
+            for entry in entries:
+                item = _extract_single(entry, url)
+                if item and item.get("download_url"):
+                    items.append(item)
 
-        for entry in entries:
-            item = _extract_single(entry, url)
-            if item and item.get("download_url"):
-                items.append(item)
-
-        if items:
-            result = {"success": True, "items": items, "count": len(items), "cached": False}
-            cache_set(url, result)
-            return result
-
-        # If yt-dlp returned no items, fall through to GraphQL
-        raise MediaError("yt-dlp returned no items, falling back to GraphQL", code=500)
-
-    except MediaError as e:
-        # Only re-raise if it's a critical permission error; otherwise try GraphQL
-        if e.code in (403, 404) and "private" in str(e).lower():
-            raise
-        logger.warning("[%s] yt-dlp failed (%s), trying GraphQL fallback", g.request_id, str(e))
-    except yt_dlp.utils.DownloadError as e:
-        msg = str(e).lower()
-        if "private" in msg or "login" in msg or "forbidden" in msg:
-            raise MediaError("This post is private or requires login.", code=403)
-        if "not found" in msg or "404" in msg:
-            logger.warning("[%s] yt-dlp said not found, will try GraphQL", g.request_id)
-        else:
-            logger.warning("[%s] yt-dlp download error: %s", g.request_id, msg)
+            if items:
+                result = {"success": True, "items": items, "count": len(items), "cached": False}
+                cache_set(url, result)
+                return result
     except Exception as e:
-        logger.warning("[%s] yt-dlp unexpected error: %s", g.request_id, str(e))
+        logger.warning(f"yt-dlp failed: {str(e)[:200]}")
 
-    # Fallback: GraphQL extraction
+    # Step 2: Try GraphQL method (best for carousels and modern posts)
     try:
         result = extract_with_graphql(url)
         cache_set(url, result)
         return result
     except MediaError as e:
+        logger.warning(f"GraphQL failed: {str(e)}")
+        # If it's a single photo (/p/), try the simple embed fallback
+        if '/p/' in url and 'photo' in str(e).lower():
+            try:
+                item = extract_photo_post(url)
+                result = {"success": True, "items": [item], "count": 1, "cached": False}
+                cache_set(url, result)
+                return result
+            except Exception as ex:
+                logger.error(f"Embed fallback also failed: {str(ex)}")
         raise e
     except Exception as e:
-        logger.exception("[%s] GraphQL fallback failed", g.request_id)
-        raise MediaError(f"All extraction methods failed: {str(e)[:200]}", code=500)
-
+        logger.error(f"Unexpected GraphQL error: {str(e)}")
+        # Final fallback for single photo
+        if '/p/' in url:
+            try:
+                item = extract_photo_post(url)
+                result = {"success": True, "items": [item], "count": 1, "cached": False}
+                cache_set(url, result)
+                return result
+            except Exception:
+                pass
+        raise MediaError(f"All extraction methods failed: {str(e)[:200]}", 500)
 
 # ----------------------------------------------------------------------
 # Middleware & Routes (unchanged except /dl minor improvement)

@@ -456,25 +456,43 @@ def proxy_media():
 @app.route("/dl", methods=["GET"])
 @limiter.exempt
 def dl():
-    import tempfile
+    import tempfile, shutil
 
     url = request.args.get("url", "").strip()
-    filename = request.args.get("filename", "instaget_video.mp4").strip()
 
     if not url or not is_valid_instagram_url(url):
         return jsonify({"error": "Invalid URL"}), 400
 
     try:
-        # ✅ tmpdir manually banao — delete mat karo jab tak response na bhej do
         tmpdir = tempfile.mkdtemp()
-
         opts = _ydl_opts()
         opts["skip_download"] = False
         opts["outtmpl"] = f"{tmpdir}/video.%(ext)s"
         opts["format"] = "best"
 
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.download([url])
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                ydl.download([url])
+        except yt_dlp.utils.DownloadError as e:
+            # ✅ Photo post — embed se download karo
+            if "no video in this post" in str(e).lower():
+                shutil.rmtree(tmpdir, ignore_errors=True)
+                try:
+                    photo = extract_photo_post(sanitize_url(url))
+                    photo_url = photo["download_url"]
+                    proxies = {"http": PROXY, "https": PROXY} if PROXY else None
+                    r = req.get(photo_url, headers={
+                        "User-Agent": "Mozilla/5.0",
+                        "Referer": "https://www.instagram.com/"
+                    }, timeout=30, proxies=proxies, verify=False)
+                    
+                    response = Response(r.content, content_type="image/jpeg")
+                    response.headers["Content-Disposition"] = 'attachment; filename="instaget_photo.jpg"'
+                    response.headers["Access-Control-Allow-Origin"] = "*"
+                    return response
+                except Exception as pe:
+                    return jsonify({"error": f"Photo download failed: {str(pe)}"}), 500
+            raise
 
         files = os.listdir(tmpdir)
         if not files:
@@ -489,22 +507,22 @@ def dl():
                     while chunk := f.read(65536):
                         yield chunk
             finally:
-                # ✅ File bhejne ke BAAD cleanup karo
-                import shutil
                 shutil.rmtree(tmpdir, ignore_errors=True)
 
         if ext in ("jpg", "jpeg", "png", "webp"):
             content_type = f"image/{ext}"
         else:
             content_type = "video/mp4"
+
         response = Response(generate(), content_type=content_type)
         response.headers["Content-Disposition"] = f'attachment; filename="instaget_media.{ext}"'
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response
+
     except Exception as e:
         logger.exception("DL error")
         return jsonify({"error": str(e)}), 500
-
+        
 @app.route("/health", methods=["GET"])
 @limiter.exempt
 def health():

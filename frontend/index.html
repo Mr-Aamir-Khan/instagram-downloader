@@ -427,7 +427,7 @@
         };
       };
 
-    } } else if (item.media_type === "video" || item.media_type === "story_video" || isVideoType(item)) {
+    }  else if (item.media_type === "video" || item.media_type === "story_video" || isVideoType(item)) {
       videoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Video`;
       videoPlayer.src = rawUrl;

@@ -1,5 +1,5 @@
 """
-Instagram Downloader - Production Grade
+Instagram Downloader - Production Grade (Fixed: Carousel + Photo/Video Detection)
 """
 
 from flask import Flask, request, jsonify, g, Response
@@ -14,10 +14,15 @@ import uuid
 import logging
 import threading
 import requests as req
+import json
+import http.cookiejar as cookielib
 from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
@@ -32,10 +37,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class MediaError(Exception):
     def __init__(self, message: str, code: int = 500):
         super().__init__(message)
         self.code = code
+
 
 app = Flask(__name__)
 
@@ -45,13 +52,15 @@ if os.path.exists(COOKIE_PATH):
 else:
     logger.warning("❌ cookies.txt NOT FOUND at %s", COOKIE_PATH)
 
-CORS(app,
-     origins="*",
-     methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-     expose_headers=["Content-Disposition", "Content-Length"],
-     supports_credentials=False,
-     automatic_options=True)
+CORS(
+    app,
+    origins="*",
+    methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["Content-Disposition", "Content-Length"],
+    supports_credentials=False,
+    automatic_options=True,
+)
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -66,13 +75,16 @@ api_key = os.getenv("SCRAPER_API_KEY")
 PROXY = f"http://scraperapi:{api_key}@proxy-server.scraperapi.com:8001" if api_key else ""
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
+
 @dataclass
 class CacheEntry:
     data: dict
     expires_at: float
 
+
 _cache: dict[str, CacheEntry] = {}
 _cache_lock = threading.Lock()
+
 
 def cache_get(key: str) -> Optional[dict]:
     with _cache_lock:
@@ -82,9 +94,11 @@ def cache_get(key: str) -> Optional[dict]:
         _cache.pop(key, None)
         return None
 
+
 def cache_set(key: str, data: dict) -> None:
     with _cache_lock:
         _cache[key] = CacheEntry(data=data, expires_at=time.time() + CACHE_TTL)
+
 
 def cache_purge_expired() -> int:
     now = time.time()
@@ -93,6 +107,7 @@ def cache_purge_expired() -> int:
         for k in expired:
             del _cache[k]
         return len(expired)
+
 
 def _purge_loop():
     while True:
@@ -104,20 +119,21 @@ def _purge_loop():
         except Exception:
             pass
 
+
 threading.Thread(target=_purge_loop, daemon=True).start()
 
-_INSTAGRAM_PATTERN = re.compile(
-    r"^https?://(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+"
-)
+_INSTAGRAM_PATTERN = re.compile(r"^https?://(www\.)?instagram\.com/(reel|p|tv|stories)/[\w\-]+")
+
 
 def is_valid_instagram_url(url: str) -> bool:
     return bool(_INSTAGRAM_PATTERN.search(url))
 
+
 def sanitize_url(url: str) -> str:
     url = url.strip()
-    # ✅ Query params mat hatao — carousel ke liye zaroor hote hain
     url = url.rstrip("/")
     return url
+
 
 def _ydl_opts() -> dict:
     opts = {
@@ -193,6 +209,7 @@ def _extract_single(info: dict, source_url: str) -> dict:
 
 
 def extract_photo_post(url: str) -> dict:
+    """Fallback for single photo when yt-dlp fails (only for /p/ URLs)."""
     match = re.search(r'/p/([^/]+)', url)
     if not match:
         raise MediaError("Invalid post URL", code=422)
@@ -213,14 +230,11 @@ def extract_photo_post(url: str) -> dict:
 
     html = resp.text
 
-    img_match = re.search(
-        r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"', html)
+    img_match = re.search(r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"', html)
     if not img_match:
-        img_match = re.search(
-            r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"', html)
+        img_match = re.search(r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"', html)
     if not img_match:
-        img_match = re.search(
-            r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"', html)
+        img_match = re.search(r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"', html)
 
     if not img_match:
         raise MediaError("No image found in post", code=404)
@@ -241,74 +255,185 @@ def extract_photo_post(url: str) -> dict:
     }
 
 
+# ------------------------- GRAPHQL EXTRACTION (Fixes carousel) -------------------------
+def _extract_graphql_node(node: dict) -> Optional[dict]:
+    """Convert a GraphQL media node into our standard item format."""
+    typename = node.get("__typename", "")
+    if typename == "GraphVideo":
+        video_url = node.get("video_url", "")
+        if video_url:
+            return {
+                "download_url": video_url,
+                "media_type": "video",
+                "ext": "mp4",
+                "thumbnail": node.get("display_url", ""),
+                "title": "Instagram Video",
+                "uploader": node.get("owner", {}).get("username", ""),
+                "has_audio": True,
+                "width": node.get("dimensions", {}).get("width"),
+                "height": node.get("dimensions", {}).get("height"),
+                "duration": node.get("video_duration"),
+            }
+    elif typename in ("GraphImage", "GraphStoryImage"):
+        img_url = node.get("display_url", "")
+        if img_url:
+            return {
+                "download_url": img_url,
+                "media_type": "photo",
+                "ext": "jpg",
+                "thumbnail": img_url,
+                "title": "Instagram Photo",
+                "uploader": node.get("owner", {}).get("username", ""),
+                "has_audio": False,
+                "width": node.get("dimensions", {}).get("width"),
+                "height": node.get("dimensions", {}).get("height"),
+                "duration": None,
+            }
+    return None
+
+
+def extract_with_graphql(url: str) -> dict:
+    """Extract all media items from an Instagram post using GraphQL endpoint."""
+    match = re.search(r'(instagram\.com/(p|reel|tv|stories)/([\w\-]+))', url)
+    if not match:
+        raise MediaError("Invalid Instagram URL for GraphQL extraction", 400)
+
+    shortcode = match.group(3)
+    api_url = f"https://www.instagram.com/p/{shortcode}/?__a=1&__d=1"
+
+    session = req.Session()
+    retries = Retry(total=2, backoff_factor=0.5, status_forcelist=[500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+
+    if PROXY:
+        session.proxies = {"http": PROXY, "https": PROXY}
+    session.verify = False
+
+    # Load cookies if available
+    if os.path.exists(COOKIE_PATH):
+        cj = cookielib.MozillaCookieJar(COOKIE_PATH)
+        cj.load(ignore_expires=True)
+        session.cookies.update(cj)
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json",
+        "Referer": "https://www.instagram.com/",
+    }
+
+    try:
+        resp = session.get(api_url, headers=headers, timeout=REQUEST_TIMEOUT)
+    except Exception as e:
+        raise MediaError(f"GraphQL request failed: {str(e)[:100]}", 502)
+
+    if resp.status_code != 200:
+        raise MediaError(f"GraphQL endpoint returned {resp.status_code}", 502)
+
+    try:
+        data = resp.json()
+    except json.JSONDecodeError:
+        raise MediaError("Invalid JSON from Instagram GraphQL", 502)
+
+    graphql = data.get("graphql", {})
+    media = graphql.get("shortcode_media", {})
+    if not media:
+        raise MediaError("No media data found in GraphQL response", 404)
+
+    items = []
+    # Carousel (sidecar) handling
+    if media.get("__typename") == "GraphSidecar":
+        edges = media.get("edge_sidecar_to_children", {}).get("edges", [])
+        for edge in edges[:MAX_CAROUSEL_ITEMS]:
+            node = edge.get("node", {})
+            item = _extract_graphql_node(node)
+            if item and item.get("download_url"):
+                items.append(item)
+    else:
+        # Single photo/video
+        item = _extract_graphql_node(media)
+        if item and item.get("download_url"):
+            items.append(item)
+
+    if not items:
+        raise MediaError("No downloadable media found in GraphQL data", 404)
+
+    return {
+        "success": True,
+        "items": items,
+        "count": len(items),
+        "cached": False,
+    }
+
+
+# ------------------------- MAIN EXTRACTION WITH FALLBACK -------------------------
 def extract_media(url: str) -> dict:
     cached = cache_get(url)
     if cached:
         cached["cached"] = True
         return cached
 
+    # First attempt: yt-dlp (fast, handles reels and videos well)
     try:
         with yt_dlp.YoutubeDL(_ydl_opts()) as ydl:
             info = ydl.extract_info(url, download=False)
         if not info:
             raise MediaError("No data extracted.", code=500)
 
-    except MediaError:
-        raise
+        items = []
+        entries = info.get("entries")
+        if entries:
+            entries = list(entries)[:MAX_CAROUSEL_ITEMS]
+        else:
+            entries = [info]
+
+        for entry in entries:
+            item = _extract_single(entry, url)
+            if item and item.get("download_url"):
+                items.append(item)
+
+        if items:
+            result = {"success": True, "items": items, "count": len(items), "cached": False}
+            cache_set(url, result)
+            return result
+
+        # If yt-dlp returned no items, fall through to GraphQL
+        raise MediaError("yt-dlp returned no items, falling back to GraphQL", code=500)
+
+    except MediaError as e:
+        # Only re-raise if it's a critical permission error; otherwise try GraphQL
+        if e.code in (403, 404) and "private" in str(e).lower():
+            raise
+        logger.warning("[%s] yt-dlp failed (%s), trying GraphQL fallback", g.request_id, str(e))
     except yt_dlp.utils.DownloadError as e:
-        msg = str(e)
-        msg_lower = msg.lower()
-
-        if "no video in this post" in msg_lower:
-            try:
-                item = extract_photo_post(url)
-                result = {
-                    "success": True,
-                    "items": [item],
-                    "count": 1,
-                    "cached": False,
-                }
-                cache_set(url, result)
-                return result
-            except MediaError:
-                raise
-            except Exception as ex:
-                raise MediaError(f"Photo extraction failed: {str(ex)[:200]}", code=502)
-
-        if any(x in msg_lower for x in ["private", "login", "forbidden", "403"]):
+        msg = str(e).lower()
+        if "private" in msg or "login" in msg or "forbidden" in msg:
             raise MediaError("This post is private or requires login.", code=403)
-        if any(x in msg_lower for x in ["not found", "404"]):
-            raise MediaError("Post not found or deleted.", code=404)
-        raise MediaError(f"Could not fetch media: {msg[:200]}", code=502)
+        if "not found" in msg or "404" in msg:
+            logger.warning("[%s] yt-dlp said not found, will try GraphQL", g.request_id)
+        else:
+            logger.warning("[%s] yt-dlp download error: %s", g.request_id, msg)
     except Exception as e:
-        raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
+        logger.warning("[%s] yt-dlp unexpected error: %s", g.request_id, str(e))
 
-    items = []
-    entries = info.get("entries")
-    if entries:
-        entries = list(entries)[:MAX_CAROUSEL_ITEMS]
-    else:
-        entries = [info]
-
-    for entry in entries:
-        item = _extract_single(entry, url)
-        if item and item.get("download_url"):
-            items.append(item)
-
-    if not items:
-        raise MediaError("No downloadable media found.", code=404)
-
-    result = {
-        "success": True,
-        "items": items,
-        "count": len(items),
-        "cached": False,
-    }
-    cache_set(url, result)
-    return result
+    # Fallback: GraphQL extraction
+    try:
+        result = extract_with_graphql(url)
+        cache_set(url, result)
+        return result
+    except MediaError as e:
+        raise e
+    except Exception as e:
+        logger.exception("[%s] GraphQL fallback failed", g.request_id)
+        raise MediaError(f"All extraction methods failed: {str(e)[:200]}", code=500)
 
 
-# ── Middleware ──────────────────────────────────────────────────────────────
+# ----------------------------------------------------------------------
+# Middleware & Routes (unchanged except /dl minor improvement)
+# ----------------------------------------------------------------------
 
 @app.before_request
 def handle_preflight():
@@ -319,48 +444,57 @@ def handle_preflight():
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         return response
 
+
 @app.before_request
 def attach_request_id():
     g.request_id = str(uuid.uuid4())[:8]
     g.start_time = time.time()
 
+
 @app.after_request
 def log_request(response):
-    duration = round((time.time() - getattr(g, 'start_time', time.time())) * 1000, 1)
+    duration = round((time.time() - getattr(g, "start_time", time.time())) * 1000, 1)
     logger.info(
         "[%s] %s %s → %d (%sms)",
-        getattr(g, 'request_id', 'unknown'), request.method, request.path,
-        response.status_code, duration,
+        getattr(g, "request_id", "unknown"),
+        request.method,
+        request.path,
+        response.status_code,
+        duration,
     )
-    response.headers["X-Request-ID"] = getattr(g, 'request_id', 'unknown')
+    response.headers["X-Request-ID"] = getattr(g, "request_id", "unknown")
     return response
 
 
-# ── Error Handlers ──────────────────────────────────────────────────────────
-
 @app.errorhandler(429)
 def too_many_requests(e):
-    return jsonify({
-        "success": False,
-        "error": "Rate limit exceeded. Please slow down.",
-        "retry_after": e.description,
-    }), 429
+    return (
+        jsonify(
+            {
+                "success": False,
+                "error": "Rate limit exceeded. Please slow down.",
+                "retry_after": e.description,
+            }
+        ),
+        429,
+    )
+
 
 @app.errorhandler(404)
 def not_found(_):
     return jsonify({"success": False, "error": "Endpoint not found."}), 404
 
+
 @app.errorhandler(405)
 def method_not_allowed(_):
     return jsonify({"success": False, "error": "Method not allowed."}), 405
+
 
 @app.errorhandler(500)
 def internal_error(e):
     logger.error("Unhandled exception: %s", e, exc_info=True)
     return jsonify({"success": False, "error": "Internal server error."}), 500
 
-
-# ── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/download", methods=["POST"])
 @limiter.limit("10 per minute")
@@ -378,10 +512,15 @@ def download():
     url = sanitize_url(raw_url)
 
     if not is_valid_instagram_url(url):
-        return jsonify({
-            "success": False,
-            "error": "Invalid Instagram URL. Supported: /p/, /reel/, /tv/, /stories/",
-        }), 422
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Invalid Instagram URL. Supported: /p/, /reel/, /tv/, /stories/",
+                }
+            ),
+            422,
+        )
 
     logger.info("[%s] Downloading: %s", g.request_id, url)
 
@@ -424,9 +563,9 @@ def proxy_media():
         }
         proxies = {"http": PROXY, "https": PROXY} if PROXY else None
 
-        with req.get(media_url, headers=headers, stream=True,
-                     timeout=60, proxies=proxies, verify=False) as r:
-
+        with req.get(
+            media_url, headers=headers, stream=True, timeout=60, proxies=proxies, verify=False
+        ) as r:
             content_type = r.headers.get("Content-Type", "application/octet-stream")
             content_length = r.headers.get("Content-Length")
 
@@ -445,7 +584,9 @@ def proxy_media():
                 response.headers["Content-Length"] = content_length
 
             response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Length"
+            response.headers["Access-Control-Expose-Headers"] = (
+                "Content-Disposition, Content-Length"
+            )
 
             return response
 
@@ -483,19 +624,26 @@ def dl():
                     photo = extract_photo_post(sanitize_url(url))
                     photo_url = photo["download_url"]
                     proxies = {"http": PROXY, "https": PROXY} if PROXY else None
-                    r = req.get(photo_url, headers={
-                        "User-Agent": "Mozilla/5.0",
-                        "Referer": "https://www.instagram.com/"
-                    }, timeout=30, proxies=proxies, verify=False)
+                    r = req.get(
+                        photo_url,
+                        headers={
+                            "User-Agent": "Mozilla/5.0",
+                            "Referer": "https://www.instagram.com/",
+                        },
+                        timeout=30,
+                        proxies=proxies,
+                        verify=False,
+                    )
                     response = Response(r.content, content_type="image/jpeg")
-                    response.headers["Content-Disposition"] = f'attachment; filename="instaget_photo_{index+1}.jpg"'
+                    response.headers[
+                        "Content-Disposition"
+                    ] = f'attachment; filename="instaget_photo_{index+1}.jpg"'
                     response.headers["Access-Control-Allow-Origin"] = "*"
                     return response
                 except Exception as pe:
                     return jsonify({"error": f"Photo download failed: {str(pe)}"}), 500
             raise
 
-        # ✅ Sorted files — index ke hisaab se sahi file
         files = sorted(os.listdir(tmpdir))
         if not files:
             return jsonify({"error": "Download failed"}), 500
@@ -518,7 +666,9 @@ def dl():
             content_type = "video/mp4"
 
         response = Response(generate(), content_type=content_type)
-        response.headers["Content-Disposition"] = f'attachment; filename="instaget_media_{index+1}.{ext}"'
+        response.headers[
+            "Content-Disposition"
+        ] = f'attachment; filename="instaget_media_{index+1}.{ext}"'
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response
 
@@ -526,14 +676,20 @@ def dl():
         logger.exception("DL error")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/health", methods=["GET"])
 @limiter.exempt
 def health():
-    return jsonify({
-        "status": "ok",
-        "cache_size": len(_cache),
-        "timestamp": time.time(),
-    }), 200
+    return (
+        jsonify(
+            {
+                "status": "ok",
+                "cache_size": len(_cache),
+                "timestamp": time.time(),
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/metrics", methods=["GET"])
@@ -544,12 +700,17 @@ def metrics():
     if not token or not admin_token or token != admin_token:
         return jsonify({"error": "Unauthorized"}), 401
     purged = cache_purge_expired()
-    return jsonify({
-        "cache_active": len(_cache),
-        "cache_purged_this_call": purged,
-        "max_carousel": MAX_CAROUSEL_ITEMS,
-        "cache_ttl_seconds": CACHE_TTL,
-    }), 200
+    return (
+        jsonify(
+            {
+                "cache_active": len(_cache),
+                "cache_purged_this_call": purged,
+                "max_carousel": MAX_CAROUSEL_ITEMS,
+                "cache_ttl_seconds": CACHE_TTL,
+            }
+        ),
+        200,
+    )
 
 
 if __name__ == "__main__":

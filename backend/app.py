@@ -212,28 +212,18 @@ def extract_photo_post(url: str) -> dict:
 
     html = resp.text
 
-    # Priority 1: full res (dst-jpg_e15_fr = original full resolution)
     img_match = re.search(
-        r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"',
-        html
-    )
-    # Priority 2: 1080x1080 version
+        r'"(https://[^"]+t51\.82787-15[^"]+dst-jpg_e15_fr[^"]+)"', html)
     if not img_match:
         img_match = re.search(
-            r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"',
-            html
-        )
-    # Priority 3: pehla t51.82787-15 URL (profile pic t51.2885-19 skip)
+            r'"(https://[^"]+t51\.82787-15[^"]+p1080x1080[^"]+)"', html)
     if not img_match:
         img_match = re.search(
-            r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"',
-            html
-        )
+            r'"(https://[^"]+t51\.82787-15[^"]+\.jpg[^"]+)"', html)
 
     if not img_match:
         raise MediaError("No image found in post", code=404)
 
-    # &amp; = HTML encoded &
     img_url = img_match.group(1).replace("&amp;", "&").replace("\\/", "/")
 
     return {
@@ -268,7 +258,6 @@ def extract_media(url: str) -> dict:
         msg = str(e)
         msg_lower = msg.lower()
 
-        # Photo post — yt-dlp support nahi karta, embed se nikalo
         if "no video in this post" in msg_lower:
             try:
                 item = extract_photo_post(url)
@@ -294,7 +283,6 @@ def extract_media(url: str) -> dict:
         raise MediaError(f"Extraction failed: {str(e)[:200]}", code=500)
 
     items = []
-
     entries = info.get("entries")
     if entries:
         entries = list(entries)[:MAX_CAROUSEL_ITEMS]
@@ -315,10 +303,11 @@ def extract_media(url: str) -> dict:
         "count": len(items),
         "cached": False,
     }
-
     cache_set(url, result)
     return result
 
+
+# ── Middleware ──────────────────────────────────────────────────────────────
 
 @app.before_request
 def handle_preflight():
@@ -334,7 +323,6 @@ def attach_request_id():
     g.request_id = str(uuid.uuid4())[:8]
     g.start_time = time.time()
 
-
 @app.after_request
 def log_request(response):
     duration = round((time.time() - getattr(g, 'start_time', time.time())) * 1000, 1)
@@ -346,6 +334,8 @@ def log_request(response):
     response.headers["X-Request-ID"] = getattr(g, 'request_id', 'unknown')
     return response
 
+
+# ── Error Handlers ──────────────────────────────────────────────────────────
 
 @app.errorhandler(429)
 def too_many_requests(e):
@@ -368,117 +358,9 @@ def internal_error(e):
     logger.error("Unhandled exception: %s", e, exc_info=True)
     return jsonify({"success": False, "error": "Internal server error."}), 500
 
-@app.route("/proxy-media", methods=["GET"])
-@limiter.exempt
-def proxy_media():
-    from urllib.parse import urlparse
 
-    media_url = request.args.get("url", "").strip()
-    if not media_url:
-        return jsonify({"error": "URL required"}), 400
+# ── Routes ──────────────────────────────────────────────────────────────────
 
-    # ✅ dl=1 ho to force download karo
-    force_download = request.args.get("dl", "0") == "1"
-    filename = request.args.get("filename", "instaget_media").strip()
-
-    try:
-        parsed = urlparse(media_url)
-        netloc = parsed.netloc.lower()
-        allowed = ("instagram.com", "cdninstagram.com", "fbcdn.net")
-        if not any(netloc == d or netloc.endswith("." + d) for d in allowed):
-            return jsonify({"error": "Invalid URL"}), 400
-    except Exception:
-        return jsonify({"error": "Malformed URL"}), 400
-
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": "https://www.instagram.com/",
-        }
-        with req.get(media_url, headers=headers, stream=True, timeout=30) as r:
-            content_type = r.headers.get("Content-Type", "application/octet-stream")
-            content_length = r.headers.get("Content-Length")
-
-            def generate():
-                for chunk in r.iter_content(chunk_size=65536):  # ✅ 64KB chunks (8KB se zyada fast)
-                    if chunk:
-                        yield chunk
-
-            response = Response(generate(), content_type=content_type)
-
-            # ✅ Yeh 2 lines FORCE DOWNLOAD karti hain — blank file ki problem khatam
-            if force_download:
-                response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
-                response.headers["Content-Type"] = "application/octet-stream"
-
-            # ✅ Content-Length dene se progress bar bhi dikhega
-            if content_length:
-                response.headers["Content-Length"] = content_length
-
-            # ✅ CORS — frontend se access ke liye
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Length"
-
-            return response
-
-    except Exception as e:
-        logger.exception("[%s] Proxy error", g.request_id)
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-
-
-
-    try:
-        parsed = urlparse(media_url)
-        netloc = parsed.netloc.lower()
-        allowed = ("instagram.com", "cdninstagram.com", "fbcdn.net")
-        if not any(netloc == d or netloc.endswith("." + d) for d in allowed):
-            return jsonify({"error": "Invalid URL"}), 400
-    except Exception:
-        return jsonify({"error": "Malformed URL"}), 400
-
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": "https://www.instagram.com/",
-        }
-        with req.get(media_url, headers=headers, stream=True, timeout=15) as r:
-            content_type = r.headers.get("Content-Type", "image/jpeg")
-            def generate():
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        yield chunk
-            return Response(generate(), content_type=content_type)
-    except Exception as e:
-        logger.exception("[%s] Proxy error", g.request_id)
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@app.route("/health", methods=["GET"])
-@limiter.exempt
-def health():
-    return jsonify({
-        "status": "ok",
-        "cache_size": len(_cache),
-        "timestamp": time.time(),
-    }), 200
-
-
-@app.route("/metrics", methods=["GET"])
-@limiter.exempt
-def metrics():
-    token = request.headers.get("X-Admin-Token", "")
-    admin_token = os.getenv("ADMIN_TOKEN")
-    if not token or not admin_token or token != admin_token:
-        return jsonify({"error": "Unauthorized"}), 401
-    purged = cache_purge_expired()
-    return jsonify({
-        "cache_active": len(_cache),
-        "cache_purged_this_call": purged,
-        "max_carousel": MAX_CAROUSEL_ITEMS,
-        "cache_ttl_seconds": CACHE_TTL,
-    }), 200
 @app.route("/download", methods=["POST"])
 @limiter.limit("10 per minute")
 def download():
@@ -511,6 +393,134 @@ def download():
         return jsonify({"success": False, "error": "Unexpected server error."}), 500
 
     return jsonify(result), 200
+
+
+@app.route("/proxy-media", methods=["GET"])
+@limiter.exempt
+def proxy_media():
+    from urllib.parse import urlparse
+
+    media_url = request.args.get("url", "").strip()
+    if not media_url:
+        return jsonify({"error": "URL required"}), 400
+
+    force_download = request.args.get("dl", "0") == "1"
+    filename = request.args.get("filename", "instaget_media").strip()
+
+    try:
+        parsed = urlparse(media_url)
+        netloc = parsed.netloc.lower()
+        allowed = ("instagram.com", "cdninstagram.com", "fbcdn.net")
+        if not any(netloc == d or netloc.endswith("." + d) for d in allowed):
+            return jsonify({"error": "Invalid URL"}), 400
+    except Exception:
+        return jsonify({"error": "Malformed URL"}), 400
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.instagram.com/",
+        }
+        proxies = {"http": PROXY, "https": PROXY} if PROXY else None
+
+        with req.get(media_url, headers=headers, stream=True,
+                     timeout=60, proxies=proxies, verify=False) as r:
+
+            content_type = r.headers.get("Content-Type", "application/octet-stream")
+            content_length = r.headers.get("Content-Length")
+
+            def generate():
+                for chunk in r.iter_content(chunk_size=65536):
+                    if chunk:
+                        yield chunk
+
+            response = Response(generate(), content_type=content_type)
+
+            if force_download:
+                response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+                response.headers["Content-Type"] = "application/octet-stream"
+
+            if content_length:
+                response.headers["Content-Length"] = content_length
+
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Length"
+
+            return response
+
+    except Exception as e:
+        logger.exception("[%s] Proxy error", g.request_id)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/dl", methods=["GET"])
+@limiter.exempt
+def dl():
+    import tempfile
+
+    url = request.args.get("url", "").strip()
+    filename = request.args.get("filename", "instaget_video.mp4").strip()
+
+    if not url or not is_valid_instagram_url(url):
+        return jsonify({"error": "Invalid URL"}), 400
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            opts = _ydl_opts()
+            opts["skip_download"] = False
+            opts["outtmpl"] = f"{tmpdir}/video.%(ext)s"
+            opts["format"] = "best"
+
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                ydl.download([url])
+
+            files = os.listdir(tmpdir)
+            if not files:
+                return jsonify({"error": "Download failed"}), 500
+
+            filepath = os.path.join(tmpdir, files[0])
+            ext = files[0].split(".")[-1]
+
+            def generate():
+                with open(filepath, "rb") as f:
+                    while chunk := f.read(65536):
+                        yield chunk
+
+            response = Response(generate(), content_type="video/mp4")
+            response.headers["Content-Disposition"] = f'attachment; filename="instaget_video.{ext}"'
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            return response
+
+    except Exception as e:
+        logger.exception("DL error")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/health", methods=["GET"])
+@limiter.exempt
+def health():
+    return jsonify({
+        "status": "ok",
+        "cache_size": len(_cache),
+        "timestamp": time.time(),
+    }), 200
+
+
+@app.route("/metrics", methods=["GET"])
+@limiter.exempt
+def metrics():
+    token = request.headers.get("X-Admin-Token", "")
+    admin_token = os.getenv("ADMIN_TOKEN")
+    if not token or not admin_token or token != admin_token:
+        return jsonify({"error": "Unauthorized"}), 401
+    purged = cache_purge_expired()
+    return jsonify({
+        "cache_active": len(_cache),
+        "cache_purged_this_call": purged,
+        "max_carousel": MAX_CAROUSEL_ITEMS,
+        "cache_ttl_seconds": CACHE_TTL,
+    }), 200
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

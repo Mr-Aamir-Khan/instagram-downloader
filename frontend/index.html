@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
@@ -297,314 +297,312 @@
 
 <script>
   const API_BASE = "https://instagram-downloader-d5y3.onrender.com";
-  const LOADER_EN = ["Fetching media info…","Waking up server (first load may take ~30s)…","Extracting URL…","Almost there…"];
-  const LOADER_HI = ["जानकारी ला रहे हैं…","Server जाग रहा है (पहली बार ~30s)…","URL निकाल रहे हैं…","बस थोड़ा और…"];
+  
+  const LOADER_EN = ["Fetching media info…","Waking up server (~30s first load)…","Extracting URL…","Almost there…"];
+  const LOADER_HI = ["जानकारी ला रहे हैं…","Server जगा रहे हैं (~30s)…","URL निकाल रहे हैं…","बस थोड़ा और…"];
 
   const T = {
-    en:{ inputLabel:"Paste Instagram Link", fetchBtn:"⬇ Fetch", clearBtn:"Clear", hint:"Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.", download:"Download", step1:"Copy an Instagram link", step2:"Paste above & click Fetch", step3:"Download in HD quality", errEmpty:"Please paste an Instagram URL first.", errInvalid:"That doesn't look like an Instagram link.", errServer:"Cannot reach server. Retry in a moment.", errGeneric:"Something went wrong." },
-    hi:{ inputLabel:"इंस्टाग्राम लिंक पेस्ट करें", fetchBtn:"⬇ फेच करें", clearBtn:"हटाएं", hint:"Reels, Posts, Photos, Stories और IGTV सपोर्ट।", download:"डाउनलोड", step1:"लिंक कॉपी करें", step2:"पेस्ट करें और Fetch दबाएं", step3:"HD में डाउनलोड करें", errEmpty:"पहले Instagram URL पेस्ट करें।", errInvalid:"यह Instagram लिंक नहीं।", errServer:"Server से connect नहीं हो पा रहा।", errGeneric:"कुछ गलत हो गया।" }
+    en:{ inputLabel:"Paste Instagram Link", dlBtn:"⬇ Fetch", clearBtn:"Clear", hint:"Supports Reels, Posts, Photos, Stories and IGTV. Must be a public account.", dlLink:"Download", step1:"Copy an Instagram link", step2:"Paste above & click Fetch", step3:"Download in HD quality", errEmpty:"Please paste an Instagram URL first.", errInvalid:"That doesn't look like an Instagram link.", errServer:"Cannot reach server. Retry in a moment.", downloading:"Downloading…" },
+    hi:{ inputLabel:"इंस्टाग्राम लिंक पेस्ट करें", dlBtn:"⬇ फेच करें", clearBtn:"हटाएं", hint:"Reels, Posts, Photos, Stories और IGTV सपोर्ट।", dlLink:"डाउनलोड", step1:"लिंक कॉपी करें", step2:"पेस्ट करें और Fetch दबाएं", step3:"HD में डाउनलोड करें", errEmpty:"पहले Instagram URL पेस्ट करें।", errInvalid:"यह Instagram लिंक नहीं।", errServer:"Server से connect नहीं हो पा रहा।", downloading:"डाउनलोड हो रहा है…" }
   };
 
-  let lang = "en";
-  let loaderTimer = null;
-  let currentItems = [];           // full items array from API
-  let currentSelectedIndex = 0;    // which item is currently displayed
-  let currentInstagramUrl = "";    // original URL from input
+  let lang = "en", loaderTimer = null, currentItem = null;
 
-  // DOM elements
-  const el = {
-    urlInput: document.getElementById("urlInput"),
-    fetchBtn: document.getElementById("fetchBtn"),
-    clearBtn: document.getElementById("clearBtn"),
-    loader: document.getElementById("loader"),
-    loaderText: document.getElementById("loaderText"),
-    errorBox: document.getElementById("errorBox"),
-    errorText: document.getElementById("errorText"),
-    resultCard: document.getElementById("resultCard"),
-    videoWrap: document.getElementById("videoWrap"),
-    photoWrap: document.getElementById("photoWrap"),
-    thumbWrap: document.getElementById("thumbWrap"),
-    videoPlayer: document.getElementById("videoPlayer"),
-    photoDisplay: document.getElementById("photoDisplay"),
-    thumbPlaceholder: document.getElementById("thumbPlaceholder"),
-    resultTitle: document.getElementById("resultTitle"),
-    resultUploader: document.getElementById("resultUploader"),
-    dlBtnText: document.getElementById("dlBtnText"),
-    carouselWrap: document.getElementById("carouselWrap")
-  };
+  function proxyUrl(url) {
+    if (!url) return "";
+    return `${API_BASE}/proxy-media?url=${encodeURIComponent(url)}`;
+  }
 
-  // Helper: proxy URL
-  function proxyUrl(url) { return `${API_BASE}/proxy-media?url=${encodeURIComponent(url)}`; }
+  // ── Force-download proxy URL — backend se Content-Disposition: attachment milta hai ──
+  // Yeh URL seedha <a href download> mein use karo, blob ki zaroorat nahi
+  function forceDownloadUrl(url, filename) {
+    if (!url) return "";
+    return `${API_BASE}/proxy-media?url=${encodeURIComponent(url)}&download=1&filename=${encodeURIComponent(filename)}`;
+  }
 
-  // Helper: trigger download via hidden anchor (works for both photo & video)
-  function triggerDownload(url, filename) {
+  function isVideoType(item) {
+    const mtype = (item.media_type || "").toLowerCase();
+    const ext   = (item.ext || "").toLowerCase();
+    if (mtype.includes("video")) return true;
+    if (["mp4","webm","mov","m4v"].includes(ext)) return true;
+    return false;
+  }
+
+  function isPhotoType(item) {
+    const mtype = (item.media_type || "").toLowerCase();
+    const ext   = (item.ext || "").toLowerCase();
+    if (mtype === "photo" || mtype.includes("photo") || mtype.includes("image")) return true;
+    if (["jpg","jpeg","png","webp","gif"].includes(ext)) return true;
+    return false;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIX: Video ke liye proxy se blob download karo taaki forced save ho
+  //      Photo ke liye bhi same blob approach, ya direct anchor fallback
+  // ─────────────────────────────────────────────────────────────────────────
+  async function downloadMedia(rawUrl, filename) {
+    document.getElementById("dlBtnText").textContent = `▶ Play & Download Video`;
+    const origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ${T[lang].downloading}`;
+
+    // Strategy 1: Proxy se blob fetch karke force-save (best for videos)
+    try {
+      const resp = await fetch(proxyUrl(rawUrl), { mode: "cors" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      
+      // Blob URL se <a download> — yeh GUARANTEED download karta hai, play nahi
+      const blobUrl = URL.createObjectURL(blob);
+      triggerAnchorDownload(blobUrl, filename);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+      return;
+    } catch (err) {
+      console.warn("Blob download failed, trying fallback:", err.message);
+    }
+
+    // Strategy 2: Fallback — forceDownload param ke saath direct anchor
+    // (works when proxy adds Content-Disposition: attachment header)
+    try {
+      triggerAnchorDownload(forceDownloadUrl(rawUrl, filename), filename);
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+      return;
+    } catch(err2) {
+      console.warn("Anchor fallback also failed:", err2.message);
+    }
+
+    // Strategy 3: Last resort — new tab mein open karo
+    window.open(proxyUrl(rawUrl), "_blank");
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+
+  // Helper: invisible <a> element se download trigger karo
+  function triggerAnchorDownload(href, filename) {
     const a = document.createElement("a");
-    a.href = url;
+    a.href = href;
     a.download = filename;
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
+    // Small delay ke baad remove karo
     setTimeout(() => document.body.removeChild(a), 500);
   }
 
-  // Fetch and display media for a given index
-  function displayItem(index) {
-    if (!currentItems.length || index >= currentItems.length) return;
-    const item = currentItems[index];
-    currentSelectedIndex = index;
+  function showResult(data) {
+    const item = data.items[0];
+    currentItem = item;
 
-    // Reset display areas
-    el.videoWrap.style.display = "none";
-    el.photoWrap.style.display = "none";
-    el.thumbWrap.style.display = "none";
-    el.videoPlayer.src = "";
-    el.photoDisplay.src = "";
+    const videoWrap   = document.getElementById("videoWrap");
+    const photoWrap   = document.getElementById("photoWrap");
+    const thumbWrap   = document.getElementById("thumbWrap");
+    const videoPlayer = document.getElementById("videoPlayer");
+    const photoDisp   = document.getElementById("photoDisplay");
 
-    el.resultTitle.textContent = item.title || "Instagram Media";
-    el.resultUploader.textContent = item.uploader ? `@${item.uploader}` : "";
+    // Reset all
+    videoWrap.style.display = "none";
+    photoWrap.style.display = "none";
+    thumbWrap.style.display = "none";
+    videoPlayer.src = "";
+    photoDisp.src = "";
+
+    document.getElementById("resultTitle").textContent = item.title || "Instagram Media";
+    document.getElementById("resultUploader").textContent = item.uploader ? `@${item.uploader}` : "";
 
     const rawUrl = item.download_url || "";
-    const mediaType = (item.media_type || "").toLowerCase();
-    const ext = (item.ext || "").toLowerCase();
 
-    if (mediaType === "photo" || mediaType === "story_photo" || ["jpg","jpeg","png","webp","gif"].includes(ext)) {
-      el.photoWrap.style.display = "block";
-      el.dlBtnText.textContent = `${T[lang].download} Photo`;
-      el.photoDisplay.src = proxyUrl(rawUrl);
-      el.photoDisplay.onerror = () => {
-        el.photoDisplay.onerror = null;
-        el.photoDisplay.src = rawUrl;
-        el.photoDisplay.onerror = () => {
-          el.photoWrap.style.display = "none";
+    if (item.media_type === "photo" || item.media_type === "story_photo" || isPhotoType(item)) {
+      photoWrap.style.display = "block";
+      document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Photo`;
+      photoDisp.src = proxyUrl(rawUrl);
+      photoDisp.onerror = () => {
+        photoDisp.onerror = null;
+        photoDisp.src = rawUrl;
+        photoDisp.onerror = () => {
+          photoWrap.style.display = "none";
           showThumbnail(item);
         };
       };
-    } else if (mediaType === "video" || mediaType === "story_video" || ["mp4","webm","mov","m4v"].includes(ext)) {
-      el.videoWrap.style.display = "block";
-      el.dlBtnText.textContent = `${T[lang].download} Video`;
-      el.videoPlayer.src = rawUrl;
-      el.videoPlayer.onerror = () => {
-        el.videoWrap.style.display = "none";
+
+    }  else if (item.media_type === "video" || item.media_type === "story_video" || isVideoType(item)) {
+      videoWrap.style.display = "block";
+      document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Video`;
+      videoPlayer.src = rawUrl;
+      videoPlayer.onerror = () => {
+        videoWrap.style.display = "none";
         showThumbnail(item);
       };
+
     } else {
       showThumbnail(item);
-      el.dlBtnText.textContent = T[lang].download;
+      document.getElementById("dlBtnText").textContent = T[lang].dlLink;
     }
+
+    // Carousel buttons
+    const cw = document.getElementById("carouselWrap");
+    cw.innerHTML = "";
+    if (data.count > 1) {
+      cw.style.display = "flex";
+      data.items.forEach((ci, i) => {
+        const btn = document.createElement("button");
+        const isPhoto = ci.media_type === "photo" || isPhotoType(ci);
+        btn.textContent = isPhoto ? `⬇ Photo ${i+1}` : `⬇ Video ${i+1}`;
+        btn.className = "carousel-item-btn";
+        btn.onclick = () => {
+          const instagramUrl = document.getElementById("urlInput").value.trim();
+          window.location.href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}&index=${i}`;
+        };
+        cw.appendChild(btn);
+      });
+    } else {
+      cw.style.display = "none";
+    }
+
+    document.getElementById("resultCard").classList.add("visible");
+    document.getElementById("clearBtn").classList.add("show");
   }
 
   function showThumbnail(item) {
-    el.thumbWrap.style.display = "block";
-    const oldImg = el.thumbWrap.querySelector("img.thumb-img");
-    if (oldImg) oldImg.remove();
+    const tw = document.getElementById("thumbWrap");
+    const ph = document.getElementById("thumbPlaceholder");
+    tw.style.display = "block";
+    const old = tw.querySelector("img.thumb-img");
+    if (old) old.remove();
     if (item.thumbnail) {
-      el.thumbPlaceholder.style.display = "none";
+      ph.style.display = "none";
       const img = document.createElement("img");
       img.className = "thumb-img";
       img.src = proxyUrl(item.thumbnail);
       img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-      img.onerror = () => { el.thumbPlaceholder.style.display = "flex"; img.remove(); };
-      el.thumbWrap.insertBefore(img, el.thumbWrap.firstChild);
+      img.onerror = () => { ph.style.display = "flex"; img.remove(); };
+      tw.insertBefore(img, tw.firstChild);
     } else {
-      el.thumbPlaceholder.style.display = "flex";
+      ph.style.display = "flex";
     }
-  }
-
-  function renderCarouselButtons() {
-    el.carouselWrap.innerHTML = "";
-    if (currentItems.length <= 1) {
-      el.carouselWrap.style.display = "none";
-      return;
-    }
-    el.carouselWrap.style.display = "flex";
-    currentItems.forEach((item, i) => {
-      const isPhoto = (item.media_type || "").toLowerCase() === "photo" || ["jpg","jpeg","png","webp"].includes((item.ext||"").toLowerCase());
-      const btn = document.createElement("button");
-      btn.className = "carousel-item-btn";
-      btn.textContent = isPhoto ? `📷 Photo ${i+1}` : `🎬 Video ${i+1}`;
-      if (i === currentSelectedIndex) btn.style.borderColor = "var(--accent)";
-      btn.onclick = () => {
-        displayItem(i);
-        renderCarouselButtons(); // refresh active style
-      };
-      el.carouselWrap.appendChild(btn);
-    });
-  }
-
-  function showResult(data) {
-    currentItems = data.items;
-    currentSelectedIndex = 0;
-    displayItem(0);
-    renderCarouselButtons();
-    el.resultCard.classList.add("visible");
-    el.clearBtn.classList.add("show");
   }
 
   function hideResult() {
-    el.resultCard.classList.remove("visible");
-    el.videoPlayer.pause();
-    el.videoPlayer.src = "";
-    el.videoWrap.style.display = "none";
-    el.photoWrap.style.display = "none";
-    el.thumbWrap.style.display = "none";
-    el.carouselWrap.innerHTML = "";
-    el.carouselWrap.style.display = "none";
-    currentItems = [];
+    document.getElementById("resultCard").classList.remove("visible");
+    document.getElementById("videoPlayer").pause();
+    document.getElementById("videoPlayer").src = "";
+    document.getElementById("videoWrap").style.display = "none";
+    document.getElementById("photoWrap").style.display = "none";
+    document.getElementById("thumbWrap").style.display = "none";
+    const cw = document.getElementById("carouselWrap");
+    cw.innerHTML = ""; cw.style.display = "none";
   }
 
   function showLoader() {
-    el.loader.classList.add("visible");
+    document.getElementById("loader").classList.add("visible");
     hideResult(); hideError();
     const msgs = lang === "hi" ? LOADER_HI : LOADER_EN;
-    let i = 0;
-    el.loaderText.textContent = msgs[0];
-    if (loaderTimer) clearInterval(loaderTimer);
-    loaderTimer = setInterval(() => {
-      i = (i + 1) % msgs.length;
-      el.loaderText.textContent = msgs[i];
-    }, 1500);
+    const el = document.getElementById("loaderText");
+    let i = 0; el.textContent = msgs[0];
+    loaderTimer = setInterval(() => { i=(i+1)%msgs.length; el.textContent=msgs[i]; }, 1500);
   }
+  function hideLoader() { document.getElementById("loader").classList.remove("visible"); clearInterval(loaderTimer); loaderTimer=null; }
+  function showError(msg) { document.getElementById("errorText").textContent=msg; document.getElementById("errorBox").classList.add("visible"); }
+  function hideError() { document.getElementById("errorBox").classList.remove("visible"); }
 
-  function hideLoader() {
-    el.loader.classList.remove("visible");
-    if (loaderTimer) clearInterval(loaderTimer);
-    loaderTimer = null;
+  // ── FIXED Download Button ──
+ document.getElementById("downloadBtn").addEventListener("click", async () => {
+  if (!currentItem) return;
+
+  const btn = document.getElementById("downloadBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Downloading...`;
+
+  try {
+    const instagramUrl = document.getElementById("urlInput").value.trim();
+    // ✅ Photo aur Video dono ke liye /dl route use karo
+    const href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}`;
+    window.location.href = href;
+  } finally {
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> <span id="dlBtnText">Download</span>`;
+    }, 3000);
   }
-
-  function showError(msg) {
-    el.errorText.textContent = msg;
-    el.errorBox.classList.add("visible");
-  }
-  function hideError() { el.errorBox.classList.remove("visible"); }
-
-  async function doFetch() {
-    const url = el.urlInput.value.trim();
-    if (!url) { showError(T[lang].errEmpty); return; }
-    if (!/instagram\.com\/(p|reel|tv|stories)\/[\w\-]+/.test(url)) { showError(T[lang].errInvalid); return; }
-
-    currentInstagramUrl = url;
-    el.fetchBtn.disabled = true;
-    hideError();
-    showLoader();
-
-    try {
-      const res = await fetch(`${API_BASE}/download`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-        signal: AbortSignal.timeout(60000)
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || `Server error (${res.status})`);
-      hideLoader();
-      showResult(data);
-    } catch (err) {
-      hideLoader();
-      if (err.name === "TimeoutError" || err.message === "Failed to fetch") showError(T[lang].errServer);
-      else showError(err.message || T[lang].errGeneric);
-    } finally {
-      el.fetchBtn.disabled = false;
-    }
-  }
-
-  // Download current item using backend /dl?url=...&index=...
-  async function downloadCurrent() {
-    if (!currentInstagramUrl || currentItems.length === 0) return;
-    const index = currentSelectedIndex;
-    const dlUrl = `${API_BASE}/dl?url=${encodeURIComponent(currentInstagramUrl)}&index=${index}`;
-    const btn = document.getElementById("downloadBtn");
-    const originalHTML = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Downloading...`;
-    try {
-      // Trigger download via anchor (direct backend response)
-      triggerDownload(dlUrl, `instaget_media_${index+1}.mp4`);
-    } catch (e) {
-      console.warn(e);
-      // Fallback: open in new tab
-      window.open(dlUrl, '_blank');
-    } finally {
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalHTML;
-      }, 2000);
-    }
-  }
-
-  // Clear all
-  function clearAll() {
-    el.urlInput.value = "";
-    el.clearBtn.classList.remove("show");
-    currentItems = [];
-    currentInstagramUrl = "";
-    hideResult();
-    hideError();
-    el.urlInput.focus();
-  }
-
-  // Theme handling
-  const htmlEl = document.documentElement;
-  const SUN = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
-  const MOON = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
-  function setTheme(theme) {
-    htmlEl.dataset.theme = theme;
-    localStorage.setItem("ig-theme", theme);
-    document.getElementById("themeLabel").textContent = theme === "dark" ? "Light" : "Dark";
-    document.getElementById("themeIcon").innerHTML = theme === "dark" ? SUN : MOON;
-  }
-  const savedTheme = localStorage.getItem("ig-theme") || "dark";
-  setTheme(savedTheme);
-  document.getElementById("themeToggle").addEventListener("click", () => {
-    setTheme(htmlEl.dataset.theme === "dark" ? "light" : "dark");
+});
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    document.getElementById("urlInput").value = "";
+    document.getElementById("clearBtn").classList.remove("show");
+    currentItem = null; hideResult(); hideError();
+    document.getElementById("urlInput").focus();
   });
 
-  // Language switching
   function applyLang(l) {
     lang = l;
     const t = T[l];
     document.getElementById("inputLabel").textContent = t.inputLabel;
-    document.getElementById("fetchBtnText").textContent = t.fetchBtn;
+    document.getElementById("fetchBtnText").textContent = t.dlBtn;
     document.getElementById("clearBtnText").textContent = t.clearBtn;
     document.getElementById("step1Text").textContent = t.step1;
     document.getElementById("step2Text").textContent = t.step2;
     document.getElementById("step3Text").textContent = t.step3;
-    document.getElementById("faqMainTitle").textContent = l === "en" ? "📖 How to Use InstaGet" : "📖 InstaGet का उपयोग कैसे करें";
-    document.getElementById("faqMainSub").textContent = l === "en" ? "Everything you need to know — Steps, Features & FAQ" : "चरण, विशेषताएं और FAQ";
-    const hintSpan = document.getElementById("hintText");
-    const svg = hintSpan.querySelector("svg").cloneNode(true);
-    hintSpan.innerHTML = "";
-    hintSpan.appendChild(svg);
-    hintSpan.appendChild(document.createTextNode(" " + t.hint));
-    document.getElementById("guide-en").classList.toggle("active", l === "en");
-    document.getElementById("guide-hi").classList.toggle("active", l === "hi");
-    document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.lang === l));
-    if (currentItems.length) {
-      el.dlBtnText.textContent = `${t.download} ${(currentItems[currentSelectedIndex]?.media_type || "").includes("photo") ? "Photo" : "Video"}`;
-    } else {
-      el.dlBtnText.textContent = t.download;
-    }
+    document.getElementById("faqMainTitle").textContent = l==="en" ? "📖 How to Use InstaGet" : "📖 InstaGet का उपयोग कैसे करें";
+    document.getElementById("faqMainSub").textContent = l==="en" ? "Everything you need to know — Steps, Features & FAQ" : "चरण, विशेषताएं और FAQ";
+    const hint = document.getElementById("hintText");
+    const svg = hint.querySelector("svg").cloneNode(true);
+    hint.innerHTML = ""; hint.appendChild(svg);
+    hint.appendChild(document.createTextNode(" " + t.hint));
+    document.getElementById("guide-en").classList.toggle("active", l==="en");
+    document.getElementById("guide-hi").classList.toggle("active", l==="hi");
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang===l));
   }
-  document.querySelectorAll(".lang-btn").forEach(btn => {
-    btn.addEventListener("click", () => applyLang(btn.dataset.lang));
-  });
-  applyLang("en");
 
-  // Event listeners
-  el.urlInput.addEventListener("keydown", e => { if (e.key === "Enter") doFetch(); });
-  el.fetchBtn.addEventListener("click", doFetch);
-  document.getElementById("downloadBtn").addEventListener("click", downloadCurrent);
-  el.clearBtn.addEventListener("click", clearAll);
+  document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => applyLang(btn.dataset.lang)));
 
-  // FAQ accordion
+  const htmlEl = document.documentElement;
+  const SUN = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
+  const MOON = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+  function setTheme(t) {
+    htmlEl.dataset.theme = t;
+    try { localStorage.setItem("ig-theme", t); } catch(e){}
+    document.getElementById("themeLabel").textContent = t==="dark" ? "Light" : "Dark";
+    document.getElementById("themeIcon").innerHTML = t==="dark" ? SUN : MOON;
+  }
+  try { setTheme(localStorage.getItem("ig-theme") || "dark"); } catch { setTheme("dark"); }
+  document.getElementById("themeToggle").addEventListener("click", () => setTheme(htmlEl.dataset.theme==="dark" ? "light" : "dark"));
+
+  document.getElementById("urlInput").addEventListener("keydown", e => { if(e.key==="Enter") doFetch(); });
+  document.getElementById("fetchBtn").addEventListener("click", doFetch);
+
+  async function doFetch() {
+    const url = document.getElementById("urlInput").value.trim();
+    const btn = document.getElementById("fetchBtn");
+    const t = T[lang];
+    if (!url) { showError(t.errEmpty); return; }
+    if (!/instagram\.com\/(p|reel|tv|stories)\/[\w\-]+/.test(url)) { showError(t.errInvalid); return; }
+    btn.disabled = true; hideError(); showLoader();
+    try {
+      const res = await fetch(`${API_BASE}/download`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({url}), signal:AbortSignal.timeout(60000)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || `Server error (${res.status})`);
+      hideLoader(); showResult(data);
+    } catch(err) {
+      hideLoader();
+      if (err.name==="TimeoutError" || err.message==="Failed to fetch") showError(T[lang].errServer);
+      else showError(err.message || "Unknown error.");
+    } finally { btn.disabled = false; }
+  }
+
   document.addEventListener("click", e => {
     const q = e.target.closest(".faq-q");
     if (!q) return;
     const item = q.closest(".faq-item");
-    if (!item) return;
-    const wasOpen = item.classList.contains("open");
+    const was = item.classList.contains("open");
     document.querySelectorAll(".faq-item.open").forEach(i => i.classList.remove("open"));
-    if (!wasOpen) item.classList.add("open");
+    if (!was) item.classList.add("open");
   });
+
+  applyLang("en");
 </script>
 </body>
 </html>

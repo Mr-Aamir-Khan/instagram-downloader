@@ -493,11 +493,14 @@ def dl():
                 import shutil
                 shutil.rmtree(tmpdir, ignore_errors=True)
 
-        response = Response(generate(), content_type="video/mp4")
-        response.headers["Content-Disposition"] = f'attachment; filename="instaget_video.{ext}"'
+        if ext in ("jpg", "jpeg", "png", "webp"):
+            content_type = f"image/{ext}"
+        else:
+            content_type = "video/mp4"
+        response = Response(generate(), content_type=content_type)
+        response.headers["Content-Disposition"] = f'attachment; filename="instaget_media.{ext}"'
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response
-
     except Exception as e:
         logger.exception("DL error")
         return jsonify({"error": str(e)}), 500

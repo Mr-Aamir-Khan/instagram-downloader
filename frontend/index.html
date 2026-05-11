@@ -516,16 +516,16 @@
 
   try {
     const instagramUrl = document.getElementById("urlInput").value.trim();
-    const href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}&filename=instaget_video.mp4`;
+    // ✅ Photo aur Video dono ke liye /dl route use karo
+    const href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}`;
     window.location.href = href;
   } finally {
     setTimeout(() => {
       btn.disabled = false;
-      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> <span id="dlBtnText">Download Video</span>`;
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg> <span id="dlBtnText">Download</span>`;
     }, 3000);
   }
 });
-
   document.getElementById("clearBtn").addEventListener("click", () => {
     document.getElementById("urlInput").value = "";
     document.getElementById("clearBtn").classList.remove("show");

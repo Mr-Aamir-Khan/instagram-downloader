@@ -415,26 +415,22 @@
     const rawUrl = item.download_url || "";
 
     if (item.media_type === "photo" || item.media_type === "story_photo" || isPhotoType(item)) {
-      photoDisp.src = proxyUrl(rawUrl);
-      photoDisp.onerror = () => {
-        photoDisp.src = rawUrl;
-        photoDisp.onerror = () => {
-          if (item.thumbnail && item.thumbnail !== rawUrl) {
-            photoDisp.src = item.thumbnail;
-          } else {
-            photoWrap.style.display = "none";
-            showThumbnail(item);
-          }
-        };
-      };
       photoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Photo`;
+      photoDisp.src = proxyUrl(rawUrl);
+      photoDisp.onerror = () => {
+        photoDisp.onerror = null;
+        photoDisp.src = rawUrl;
+        photoDisp.onerror = () => {
+          photoWrap.style.display = "none";
+          showThumbnail(item);
+        };
+      };
 
-    } else if (isVideoType(item) && !isPhotoType(item) && item.media_type !== "photo") {
-      // Preview ke liye direct URL (stream) — download alag button se hoga
-      videoPlayer.src = rawUrl;
+    } } else if (item.media_type === "video" || item.media_type === "story_video" || isVideoType(item)) {
       videoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Video`;
+      videoPlayer.src = rawUrl;
       videoPlayer.onerror = () => {
         videoWrap.style.display = "none";
         showThumbnail(item);
@@ -449,21 +445,19 @@
     const cw = document.getElementById("carouselWrap");
     cw.innerHTML = "";
     if (data.count > 1) {
-    cw.style.display = "flex";
-    data.items.forEach((ci, i) => {
+      cw.style.display = "flex";
+      data.items.forEach((ci, i) => {
         const btn = document.createElement("button");
         const isPhoto = ci.media_type === "photo" || isPhotoType(ci);
         btn.textContent = isPhoto ? `⬇ Photo ${i+1}` : `⬇ Video ${i+1}`;
         btn.className = "carousel-item-btn";
         btn.onclick = () => {
-            // ✅ Har item ke liye /dl route use karo
-            const instagramUrl = document.getElementById("urlInput").value.trim();
-            window.location.href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}&index=${i}`;
+          const instagramUrl = document.getElementById("urlInput").value.trim();
+          window.location.href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}&index=${i}`;
         };
         cw.appendChild(btn);
-    });
-}
-    else {
+      });
+    } else {
       cw.style.display = "none";
     }
 

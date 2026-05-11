@@ -459,6 +459,7 @@ def dl():
     import tempfile, shutil
 
     url = request.args.get("url", "").strip()
+    index = int(request.args.get("index", 0))
 
     if not url or not is_valid_instagram_url(url):
         return jsonify({"error": "Invalid URL"}), 400
@@ -467,14 +468,14 @@ def dl():
         tmpdir = tempfile.mkdtemp()
         opts = _ydl_opts()
         opts["skip_download"] = False
-        opts["outtmpl"] = f"{tmpdir}/video.%(ext)s"
+        opts["outtmpl"] = f"{tmpdir}/%(autonumber)s.%(ext)s"
         opts["format"] = "best"
+        opts["noplaylist"] = False
 
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 ydl.download([url])
         except yt_dlp.utils.DownloadError as e:
-            # ✅ Photo post — embed se download karo
             if "no video in this post" in str(e).lower():
                 shutil.rmtree(tmpdir, ignore_errors=True)
                 try:
@@ -485,21 +486,22 @@ def dl():
                         "User-Agent": "Mozilla/5.0",
                         "Referer": "https://www.instagram.com/"
                     }, timeout=30, proxies=proxies, verify=False)
-                    
                     response = Response(r.content, content_type="image/jpeg")
-                    response.headers["Content-Disposition"] = 'attachment; filename="instaget_photo.jpg"'
+                    response.headers["Content-Disposition"] = f'attachment; filename="instaget_photo_{index+1}.jpg"'
                     response.headers["Access-Control-Allow-Origin"] = "*"
                     return response
                 except Exception as pe:
                     return jsonify({"error": f"Photo download failed: {str(pe)}"}), 500
             raise
 
-        files = os.listdir(tmpdir)
+        # ✅ Sorted files — index ke hisaab se sahi file
+        files = sorted(os.listdir(tmpdir))
         if not files:
             return jsonify({"error": "Download failed"}), 500
 
-        filepath = os.path.join(tmpdir, files[0])
-        ext = files[0].split(".")[-1]
+        index = min(index, len(files) - 1)
+        filepath = os.path.join(tmpdir, files[index])
+        ext = filepath.split(".")[-1]
 
         def generate():
             try:
@@ -515,7 +517,7 @@ def dl():
             content_type = "video/mp4"
 
         response = Response(generate(), content_type=content_type)
-        response.headers["Content-Disposition"] = f'attachment; filename="instaget_media.{ext}"'
+        response.headers["Content-Disposition"] = f'attachment; filename="instaget_media_{index+1}.{ext}"'
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response
 

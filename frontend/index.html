@@ -414,7 +414,7 @@
 
     const rawUrl = item.download_url || "";
 
-    if (isPhotoType(item)) {
+    if (item.media_type === "photo" || item.media_type === "story_photo" || isPhotoType(item)) {
       photoDisp.src = proxyUrl(rawUrl);
       photoDisp.onerror = () => {
         photoDisp.src = rawUrl;
@@ -430,7 +430,7 @@
       photoWrap.style.display = "block";
       document.getElementById("dlBtnText").textContent = `${T[lang].dlLink} Photo`;
 
-    } else if (isVideoType(item)) {
+    } else if (isVideoType(item) && !isPhotoType(item) && item.media_type !== "photo") {
       // Preview ke liye direct URL (stream) — download alag button se hoga
       videoPlayer.src = rawUrl;
       videoWrap.style.display = "block";
@@ -449,18 +449,21 @@
     const cw = document.getElementById("carouselWrap");
     cw.innerHTML = "";
     if (data.count > 1) {
-      cw.style.display = "flex";
-      data.items.forEach((ci, i) => {
+    cw.style.display = "flex";
+    data.items.forEach((ci, i) => {
         const btn = document.createElement("button");
-        btn.textContent = `⬇ Item ${i+1} (${ci.media_type})`;
+        const isPhoto = ci.media_type === "photo" || isPhotoType(ci);
+        btn.textContent = isPhoto ? `⬇ Photo ${i+1}` : `⬇ Video ${i+1}`;
         btn.className = "carousel-item-btn";
         btn.onclick = () => {
-          const ext = ci.ext || (isVideoType(ci) ? "mp4" : "jpg");
-          downloadMedia(ci.download_url, `instaget_${i+1}.${ext}`);
+            // ✅ Har item ke liye /dl route use karo
+            const instagramUrl = document.getElementById("urlInput").value.trim();
+            window.location.href = `${API_BASE}/dl?url=${encodeURIComponent(instagramUrl)}&index=${i}`;
         };
         cw.appendChild(btn);
-      });
-    } else {
+    });
+}
+    else {
       cw.style.display = "none";
     }
 

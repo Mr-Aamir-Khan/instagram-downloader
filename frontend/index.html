@@ -135,6 +135,10 @@
 <body>
 <div class="bg-mesh" aria-hidden="true"></div>
 <nav class="navbar">
+  <div id="safeBanner" style="background:#f59e0b;color:#000;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+  ⚠️ If Chrome shows a warning: click <strong>Advanced → Proceed to site</strong> — this site is completely safe.
+  <button onclick="document.getElementById('safeBanner').style.display='none'" style="background:#000;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">✕ Dismiss</button>
+</div>
   <div class="nav-inner">
     <span class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">InstaGet</span>
     <div class="nav-actions">

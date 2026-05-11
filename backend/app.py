@@ -465,36 +465,42 @@ def dl():
         return jsonify({"error": "Invalid URL"}), 400
 
     try:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            opts = _ydl_opts()
-            opts["skip_download"] = False
-            opts["outtmpl"] = f"{tmpdir}/video.%(ext)s"
-            opts["format"] = "best"
+        # ✅ tmpdir manually banao — delete mat karo jab tak response na bhej do
+        tmpdir = tempfile.mkdtemp()
 
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                ydl.download([url])
+        opts = _ydl_opts()
+        opts["skip_download"] = False
+        opts["outtmpl"] = f"{tmpdir}/video.%(ext)s"
+        opts["format"] = "best"
 
-            files = os.listdir(tmpdir)
-            if not files:
-                return jsonify({"error": "Download failed"}), 500
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
 
-            filepath = os.path.join(tmpdir, files[0])
-            ext = files[0].split(".")[-1]
+        files = os.listdir(tmpdir)
+        if not files:
+            return jsonify({"error": "Download failed"}), 500
 
-            def generate():
+        filepath = os.path.join(tmpdir, files[0])
+        ext = files[0].split(".")[-1]
+
+        def generate():
+            try:
                 with open(filepath, "rb") as f:
                     while chunk := f.read(65536):
                         yield chunk
+            finally:
+                # ✅ File bhejne ke BAAD cleanup karo
+                import shutil
+                shutil.rmtree(tmpdir, ignore_errors=True)
 
-            response = Response(generate(), content_type="video/mp4")
-            response.headers["Content-Disposition"] = f'attachment; filename="instaget_video.{ext}"'
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            return response
+        response = Response(generate(), content_type="video/mp4")
+        response.headers["Content-Disposition"] = f'attachment; filename="instaget_video.{ext}"'
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
 
     except Exception as e:
         logger.exception("DL error")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/health", methods=["GET"])
 @limiter.exempt
